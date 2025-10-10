@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import '../../../models/item.dart';
+import '../../../models/company.dart';
+
+class ItemGrid extends StatelessWidget {
+  final List<Company> companies;
+  final List<Item> items;
+  final Company? selectedCompany;
+  final Function(Company?) onCompanyChanged;
+  final VoidCallback onClose;
+
+  const ItemGrid({
+    super.key,
+    required this.companies,
+    required this.items,
+    required this.selectedCompany,
+    required this.onCompanyChanged,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 240,
+      color: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            height: 2,
+            color: const Color(0xFFE2E8F0),
+          ),
+          Container(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: companies.isEmpty
+                      ? const Text('Şirket yok')
+                      : DropdownButtonFormField<Company>(
+                    value: selectedCompany,
+                    decoration: const InputDecoration(
+                      labelText: 'Şirket',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    items: companies.map((company) {
+                      return DropdownMenuItem(
+                        value: company,
+                        child: Text(company.name),
+                      );
+                    }).toList(),
+                    onChanged: onCompanyChanged,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: onClose,
+                  color: const Color(0xFF4A5568),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: items.isEmpty
+                ? Center(
+              child: Text(
+                'Ayarlardan ürün ekleyin',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            )
+                : GridView.builder(
+              padding: const EdgeInsets.all(12),
+              scrollDirection: Axis.horizontal,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 1,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.7,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return Draggable<Map<String, dynamic>>(
+                  data: {
+                    'item': item,
+                    'companyId': selectedCompany!.id!,
+                  },
+                  feedback: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 140,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38A169),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            item.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.basePriceTL.toStringAsFixed(2)} ₺',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  childWhenDragging: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.grey[400]!,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF38A169),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          item.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item.basePriceTL.toStringAsFixed(2)} ₺',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
