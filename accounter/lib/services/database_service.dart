@@ -22,25 +22,8 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _createDb,
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute('DROP TABLE IF EXISTS sales');
-          await db.execute('''
-            CREATE TABLE sales(
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              item_id INTEGER NOT NULL,
-              company_id INTEGER NOT NULL,
-              quantity INTEGER NOT NULL,
-              unit_price REAL NOT NULL,
-              date TEXT NOT NULL,
-              FOREIGN KEY (item_id) REFERENCES items (id),
-              FOREIGN KEY (company_id) REFERENCES companies (id)
-            )
-          ''');
-        }
-      },
     );
   }
 
@@ -56,7 +39,8 @@ class DatabaseService {
       CREATE TABLE items(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
-        base_price_cents INTEGER NOT NULL
+        base_price_cents INTEGER NOT NULL,
+        color TEXT NOT NULL DEFAULT '#38A169'
       )
     ''');
 
@@ -150,6 +134,7 @@ class DatabaseService {
         sales.unit_price,
         items.name as itemName,
         items.base_price_cents as basePriceCents,
+        items.color as itemColor,
         companies.name as companyName
       FROM sales
       JOIN items ON sales.item_id = items.id

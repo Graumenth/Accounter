@@ -2,11 +2,13 @@ class Item {
   final int? id;
   final String name;
   final int basePriceCents;
+  final String color;
 
   Item({
     this.id,
     required this.name,
     required this.basePriceCents,
+    this.color = '#38A169',
   });
 
   double get basePriceTL => basePriceCents / 100;
@@ -15,7 +17,8 @@ class Item {
     return {
       'id': id,
       'name': name,
-      'basePriceCents': basePriceCents,
+      'base_price_cents': basePriceCents,
+      'color': color,
     };
   }
 
@@ -23,7 +26,8 @@ class Item {
     return Item(
       id: map['id'],
       name: map['name'],
-      basePriceCents: map['basePriceCents'],
+      basePriceCents: map['base_price_cents'],
+      color: map['color'] ?? '#38A169',
     );
   }
 }

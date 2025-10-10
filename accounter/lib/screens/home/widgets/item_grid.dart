@@ -83,6 +83,8 @@ class ItemGrid extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
+                final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
+
                 return Draggable<Map<String, dynamic>>(
                   data: {
                     'item': item,
@@ -95,7 +97,7 @@ class ItemGrid extends StatelessWidget {
                       width: 140,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF38A169),
+                        color: itemColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.all(12),
@@ -136,7 +138,7 @@ class ItemGrid extends StatelessWidget {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF38A169),
+                      color: itemColor,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(

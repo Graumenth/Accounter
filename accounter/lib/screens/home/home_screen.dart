@@ -35,24 +35,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadData() async {
+    print('🔄 loadData başladı');
     setState(() => isLoading = true);
 
-    companies = await DatabaseService.instance.getAllCompanies();
-    items = await DatabaseService.instance.getAllItems();
+    try {
+      companies = await DatabaseService.instance.getAllCompanies();
+      items = await DatabaseService.instance.getAllItems();
 
-    if (companies.isNotEmpty) {
-      selectedCompany = companies.first;
+      print('✅ Companies: ${companies.length}');
+      print('✅ Items: ${items.length}');
+
+      if (companies.isNotEmpty) {
+        selectedCompany = companies.first;
+        print('✅ Selected company: ${selectedCompany!.name}');
+      } else {
+        print('⚠️ Companies boş!');
+      }
+
+      await loadDailySales();
+      print('✅ loadData bitti');
+    } catch (e) {
+      print('❌ HATA loadData: $e');
+    } finally {
+      setState(() => isLoading = false);
     }
-
-    await loadDailySales();
-    setState(() => isLoading = false);
   }
 
   Future<void> loadDailySales() async {
-    final dateStr = Sale.dateToString(selectedDate);
-    sales = await DatabaseService.instance.getDailySales(dateStr);
-    dailyTotal = await DatabaseService.instance.getDailyTotal(dateStr);
-    setState(() {});
+    try {
+      print('🔄 loadDailySales başladı');
+      final dateStr = Sale.dateToString(selectedDate);
+      print('📅 Tarih: $dateStr');
+
+      sales = await DatabaseService.instance.getDailySales(dateStr);
+      dailyTotal = await DatabaseService.instance.getDailyTotal(dateStr);
+
+      print('✅ Sales: ${sales.length}');
+      print('💰 Total: $dailyTotal');
+
+      setState(() {});
+    } catch (e) {
+      print('❌ HATA loadDailySales: $e');
+    }
   }
 
   void changeDate(int days) {

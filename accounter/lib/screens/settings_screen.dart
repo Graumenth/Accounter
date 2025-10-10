@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../services/database_service.dart';
 import '../models/company.dart';
 import '../models/item.dart';
-
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -75,49 +75,99 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   Future<void> addItem() async {
     final nameController = TextEditingController();
     final priceController = TextEditingController();
+    Color selectedColor = const Color(0xFF38A169);
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Ürün'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Ürün Adı',
-                border: OutlineInputBorder(),
-              ),
-              autofocus: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Yeni Ürün'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ürün Adı',
+                    border: OutlineInputBorder(),
+                  ),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: priceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Fiyat (TL)',
+                    border: OutlineInputBorder(),
+                    prefixText: '₺ ',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final color = await showDialog<Color>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Renk Seç'),
+                        content: SingleChildScrollView(
+                          child: BlockPicker(
+                            pickerColor: selectedColor,
+                            onColorChanged: (color) {
+                              Navigator.pop(context, color);
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                    if (color != null) {
+                      setState(() => selectedColor = color);
+                    }
+                  },
+                  child: Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: selectedColor,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Renk Seç'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: priceController,
-              decoration: const InputDecoration(
-                labelText: 'Fiyat (TL)',
-                border: OutlineInputBorder(),
-                prefixText: '₺ ',
-              ),
-              keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isNotEmpty &&
+                    priceController.text.trim().isNotEmpty) {
+                  Navigator.pop(context, true);
+                }
+              },
+              child: const Text('Ekle'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty &&
-                  priceController.text.trim().isNotEmpty) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: const Text('Ekle'),
-          ),
-        ],
       ),
     );
 
@@ -130,6 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           Item(
             name: nameController.text.trim(),
             basePriceCents: (price * 100).toInt(),
+            color: '#${selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
           ),
         );
         loadData();
@@ -142,52 +193,102 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     final priceController = TextEditingController(
       text: item.basePriceTL.toStringAsFixed(2),
     );
+    Color selectedColor = Color(int.parse('0xFF${item.color.substring(1)}'));
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ürünü Düzenle'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Ürün Adı',
-                border: OutlineInputBorder(),
-              ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Ürünü Düzenle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ürün Adı',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: priceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Fiyat (TL)',
+                    border: OutlineInputBorder(),
+                    prefixText: '₺ ',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final color = await showDialog<Color>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Renk Seç'),
+                        content: SingleChildScrollView(
+                          child: BlockPicker(
+                            pickerColor: selectedColor,
+                            onColorChanged: (color) {
+                              Navigator.pop(context, color);
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                    if (color != null) {
+                      setState(() => selectedColor = color);
+                    }
+                  },
+                  child: Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: selectedColor,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Renk Seç'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: priceController,
-              decoration: const InputDecoration(
-                labelText: 'Fiyat (TL)',
-                border: OutlineInputBorder(),
-                prefixText: '₺ ',
-              ),
-              keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'delete'),
+              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isNotEmpty &&
+                    priceController.text.trim().isNotEmpty) {
+                  Navigator.pop(context, 'save');
+                }
+              },
+              child: const Text('Kaydet'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'delete'),
-            child: const Text('Sil', style: TextStyle(color: Colors.red)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty &&
-                  priceController.text.trim().isNotEmpty) {
-                Navigator.pop(context, 'save');
-              }
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
       ),
     );
 
@@ -201,6 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             id: item.id,
             name: nameController.text.trim(),
             basePriceCents: (price * 100).toInt(),
+            color: '#${selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
           ),
         );
         loadData();
@@ -410,7 +512,16 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final item = items[index];
+        final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
         return ListTile(
+          leading: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: itemColor,
+              shape: BoxShape.circle,
+            ),
+          ),
           title: Text(
             item.name,
             style: const TextStyle(
