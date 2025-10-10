@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppHeader extends StatelessWidget {
-  const AppHeader({super.key});
+  final VoidCallback onSettingsChanged;
+
+  const AppHeader({
+    super.key,
+    required this.onSettingsChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +37,10 @@ class AppHeader extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Color(0xFF4A5568)),
-                onPressed: () => Navigator.pushNamed(context, '/settings'),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, '/settings');
+                  onSettingsChanged();
+                },
               ),
             ],
           ),

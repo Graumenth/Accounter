@@ -40,76 +40,85 @@ class DateSelector extends StatelessWidget {
           height: 2,
           color: const Color(0xFFE2E8F0),
         ),
-        Container(
-          height: 56,
-          color: Colors.white,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 48,
-                child: IconButton(
-                  icon: const Icon(Icons.chevron_left, size: 24),
-                  onPressed: () => onDateChanged(-1),
-                  color: const Color(0xFF4A5568),
+        GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity! > 0) {
+              onDateChanged(-1);
+            } else if (details.primaryVelocity! < 0) {
+              onDateChanged(1);
+            }
+          },
+          child: Container(
+            height: 56,
+            color: Colors.white,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 48,
+                  child: IconButton(
+                    icon: const Icon(Icons.chevron_left, size: 24),
+                    onPressed: () => onDateChanged(-1),
+                    color: const Color(0xFF4A5568),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => onDateChanged(-1),
-                  child: Container(
-                    color: Colors.white,
-                    alignment: Alignment.center,
-                    child: Text(
-                      getDateLabel(dayBefore),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF4A5568),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onDateChanged(-1),
+                    child: Container(
+                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: Text(
+                        getDateLabel(dayBefore),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF4A5568),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Container(
-                  color: const Color(0xFFF0F4F8),
-                  alignment: Alignment.center,
-                  child: Text(
-                    getDateLabel(selectedDate),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A202C),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => onDateChanged(1),
+                Expanded(
                   child: Container(
-                    color: Colors.white,
+                    color: const Color(0xFFF0F4F8),
                     alignment: Alignment.center,
                     child: Text(
-                      getDateLabel(dayAfter),
+                      getDateLabel(selectedDate),
                       style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF4A5568),
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A202C),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(
-                width: 48,
-                child: IconButton(
-                  icon: const Icon(Icons.chevron_right, size: 24),
-                  onPressed: () => onDateChanged(1),
-                  color: const Color(0xFF4A5568),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onDateChanged(1),
+                    child: Container(
+                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: Text(
+                        getDateLabel(dayAfter),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF4A5568),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(
+                  width: 48,
+                  child: IconButton(
+                    icon: const Icon(Icons.chevron_right, size: 24),
+                    onPressed: () => onDateChanged(1),
+                    color: const Color(0xFF4A5568),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         Container(

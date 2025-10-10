@@ -20,13 +20,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
   List<Map<String, dynamic>> sales = [];
+  List<Map<String, dynamic>> filteredSales = [];
   List<Company> companies = [];
   List<Item> items = [];
   Company? selectedCompany;
+  int? selectedCompanyFilter;
 
   bool showItemGrid = false;
   bool isLoading = true;
   int dailyTotal = 0;
+  int companyTotal = 0;
 
   @override
   void initState() {
@@ -73,10 +76,26 @@ class _HomeScreenState extends State<HomeScreen> {
       print('✅ Sales: ${sales.length}');
       print('💰 Total: $dailyTotal');
 
-      setState(() {});
+      filterSales();
     } catch (e) {
       print('❌ HATA loadDailySales: $e');
     }
+  }
+
+  void filterSales() {
+    if (selectedCompanyFilter == null) {
+      filteredSales = sales;
+      companyTotal = dailyTotal;
+    } else {
+      final companyName = companies.firstWhere((c) => c.id == selectedCompanyFilter).name;
+      filteredSales = sales.where((sale) => sale['companyName'] == companyName).toList();
+
+      companyTotal = 0;
+      for (var sale in filteredSales) {
+        companyTotal += (sale['quantity'] as int) * (sale['basePriceCents'] as int);
+      }
+    }
+    setState(() {});
   }
 
   void changeDate(int days) {
@@ -84,6 +103,13 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedDate = selectedDate.add(Duration(days: days));
     });
     loadDailySales();
+  }
+
+  void onCompanyFilterChanged(int? companyId) {
+    setState(() {
+      selectedCompanyFilter = companyId;
+    });
+    filterSales();
   }
 
   Future<void> addSale(Item item, int companyId) async {
@@ -123,19 +149,25 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF7FAFC),
       body: Column(
         children: [
-          const AppHeader(),
+          AppHeader(
+            onSettingsChanged: () => loadData(),
+          ),
           DateSelector(
             selectedDate: selectedDate,
             onDateChanged: changeDate,
           ),
-          const CategoryTabs(),
+          CategoryTabs(
+            companies: companies,
+            selectedCompanyId: selectedCompanyFilter,
+            onCompanySelected: onCompanyFilterChanged,
+          ),
 
           Expanded(
             child: Stack(
               children: [
                 SalesList(
                   isLoading: isLoading,
-                  sales: sales,
+                  sales: filteredSales,
                   onUpdateQuantity: updateSaleQuantity,
                   onAddItem: addSale,
                 ),
@@ -164,7 +196,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onClose: () => setState(() => showItemGrid = false),
             ),
 
-          DailyTotalBar(dailyTotal: dailyTotal),
+          DailyTotalBar(
+            dailyTotal: dailyTotal,
+            companyTotal: selectedCompanyFilter != null ? companyTotal : null,
+            companyName: selectedCompanyFilter != null
+                ? companies.firstWhere((c) => c.id == selectedCompanyFilter).name
+                : null,
+          ),
         ],
       ),
     );

@@ -58,9 +58,50 @@ class SalesList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 100),
             itemCount: sales.length,
             itemBuilder: (context, index) {
-              return _SaleItem(
-                sale: sales[index],
-                onUpdateQuantity: onUpdateQuantity,
+              return Dismissible(
+                key: Key(sales[index]['id'].toString()),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: const Color(0xFFE53E3E),
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                confirmDismiss: (direction) async {
+                  return await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Satışı Sil'),
+                        content: const Text('Bu satışı silmek istediğinize emin misiniz?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('İptal'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE53E3E),
+                            ),
+                            child: const Text('Sil'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                onDismissed: (direction) {
+                  onUpdateQuantity(sales[index]['id'], 0);
+                },
+                child: _SaleItem(
+                  sale: sales[index],
+                  onUpdateQuantity: onUpdateQuantity,
+                ),
               );
             },
           ),
@@ -149,6 +190,9 @@ class _SaleItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final quantity = sale['quantity'] as int;
     final itemTotal = (quantity * sale['basePriceCents']) / 100;
+    final itemColor = sale['itemColor'] != null
+        ? Color(int.parse('0xFF${sale['itemColor'].toString().substring(1)}'))
+        : const Color(0xFF38A169);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
@@ -156,6 +200,15 @@ class _SaleItem extends StatelessWidget {
       color: Colors.white,
       child: Row(
         children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: itemColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
