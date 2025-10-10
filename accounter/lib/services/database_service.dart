@@ -88,6 +88,25 @@ class DatabaseService {
     });
   }
 
+  Future<void> updateSaleQuantity(int saleId, int quantity) async {
+    final db = await database;
+    await db.update(
+      'sales',
+      {'quantity': quantity},
+      where: 'id = ?',
+      whereArgs: [saleId],
+    );
+  }
+
+  Future<void> deleteSale(int saleId) async {
+    final db = await database;
+    await db.delete(
+      'sales',
+      where: 'id = ?',
+      whereArgs: [saleId],
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getDailySales(String date) async {
     final db = await database;
     return await db.rawQuery('''

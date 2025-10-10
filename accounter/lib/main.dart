@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/home/home_screen.dart';
+import 'package:accounter/screens/home/home_screen.dart';
 
 void main() {
   runApp(const MyApp());

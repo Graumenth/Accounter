@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../models/pending_sale.dart';
-import '../../../models/company.dart';
-import '../../../models/item.dart';
-import '../../../models/sale.dart';
-import '../../../services/database_service.dart';
+import '../../models/company.dart';
+import '../../models/item.dart';
+import '../../models/sale.dart';
+import '../../services/database_service.dart';
 import 'widgets/app_header.dart';
 import 'widgets/date_selector.dart';
 import 'widgets/category_tabs.dart';
@@ -20,8 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
-  List<PendingSale> pendingSales = [];
-  List<Map<String, dynamic>> savedSales = [];
+  List<Map<String, dynamic>> sales = [];
   List<Company> companies = [];
   List<Item> items = [];
   Company? selectedCompany;
@@ -52,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadDailySales() async {
     final dateStr = Sale.dateToString(selectedDate);
-    savedSales = await DatabaseService.instance.getDailySales(dateStr);
+    sales = await DatabaseService.instance.getDailySales(dateStr);
     dailyTotal = await DatabaseService.instance.getDailyTotal(dateStr);
     setState(() {});
   }
@@ -60,59 +58,39 @@ class _HomeScreenState extends State<HomeScreen> {
   void changeDate(int days) {
     setState(() {
       selectedDate = selectedDate.add(Duration(days: days));
-      pendingSales.clear();
     });
     loadDailySales();
   }
 
-  void addPendingSale(Item item, int companyId) {
-    setState(() {
-      pendingSales.add(PendingSale(
-        item: item,
-        companyId: companyId,
-      ));
-    });
-  }
+  Future<void> addSale(Item item, int companyId) async {
+    final sale = Sale(
+      itemId: item.id!,
+      date: Sale.dateToString(selectedDate),
+      companyId: companyId,
+      quantity: 1,
+      unitPrice: item.basePriceTL,
+    );
 
-  void removePendingSale(int index) {
-    setState(() => pendingSales.removeAt(index));
-  }
-
-  void updateQuantity(int index, int delta) {
-    setState(() {
-      final newQuantity = pendingSales[index].quantity + delta;
-      if (newQuantity > 0) {
-        pendingSales[index].quantity = newQuantity;
-      }
-    });
-  }
-
-  Future<void> savePendingSales() async {
-    for (final sale in pendingSales) {
-      final saleModel = Sale(
-        itemId: sale.item.id!,
-        date: Sale.dateToString(selectedDate),
-        companyId: sale.companyId,
-        quantity: sale.quantity,
-        unitPrice: sale.item.basePriceTL,
-      );
-      await DatabaseService.instance.insertSale(saleModel);
-    }
-
-    setState(() => pendingSales.clear());
+    await DatabaseService.instance.insertSale(sale);
     await loadDailySales();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Satışlar kaydedildi!')),
+        SnackBar(
+          content: Text('${item.name} eklendi'),
+          duration: const Duration(seconds: 1),
+        ),
       );
     }
   }
 
-  int get pendingTotal {
-    return pendingSales.fold(0, (sum, sale) =>
-    sum + (sale.item.basePriceTL * sale.quantity * 100).toInt()
-    );
+  Future<void> updateSaleQuantity(int saleId, int newQuantity) async {
+    if (newQuantity <= 0) {
+      await DatabaseService.instance.deleteSale(saleId);
+    } else {
+      await DatabaseService.instance.updateSaleQuantity(saleId, newQuantity);
+    }
+    await loadDailySales();
   }
 
   @override
@@ -133,36 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 SalesList(
                   isLoading: isLoading,
-                  savedSales: savedSales,
-                  pendingSales: pendingSales,
-                  onRemovePending: removePendingSale,
-                  onUpdateQuantity: updateQuantity,
-                  onAddItem: addPendingSale,
+                  sales: sales,
+                  onUpdateQuantity: updateSaleQuantity,
+                  onAddItem: addSale,
                 ),
-
-                if (pendingSales.isNotEmpty)
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: ElevatedButton(
-                      onPressed: savePendingSales,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF38A169),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Kaydet (${pendingSales.length} ürün)',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
 
                 if (!showItemGrid)
                   Positioned(
@@ -188,10 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onClose: () => setState(() => showItemGrid = false),
             ),
 
-          DailyTotalBar(
-            dailyTotal: dailyTotal,
-            pendingTotal: pendingTotal,
-          ),
+          DailyTotalBar(dailyTotal: dailyTotal),
         ],
       ),
     );

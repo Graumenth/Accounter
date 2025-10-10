@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../models/pending_sale.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../models/item.dart';
 
 class SalesList extends StatelessWidget {
   final bool isLoading;
-  final List<Map<String, dynamic>> savedSales;
-  final List<PendingSale> pendingSales;
-  final Function(int) onRemovePending;
+  final List<Map<String, dynamic>> sales;
   final Function(int, int) onUpdateQuantity;
   final Function(Item, int) onAddItem;
 
   const SalesList({
     super.key,
     required this.isLoading,
-    required this.savedSales,
-    required this.pendingSales,
-    required this.onRemovePending,
+    required this.sales,
     required this.onUpdateQuantity,
     required this.onAddItem,
   });
@@ -26,11 +22,8 @@ class SalesList extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final allSales = [...savedSales];
-    final hasSales = allSales.isNotEmpty || pendingSales.isNotEmpty;
-
     return DragTarget<Map<String, dynamic>>(
-      onWillAccept: (data) => data != null,
+      onWillAcceptWithDetails: (details) => details.data['item'] != null && details.data['companyId'] != null,
       onAcceptWithDetails: (details) {
         final data = details.data;
         onAddItem(data['item'] as Item, data['companyId'] as int);
@@ -38,9 +31,9 @@ class SalesList extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           color: candidateData.isNotEmpty
-              ? const Color(0xFF38A169).withOpacity(0.1)
+              ? const Color(0xFF38A169).withValues(alpha: 0.1)
               : const Color(0xFFF7FAFC),
-          child: !hasSales
+          child: sales.isEmpty
               ? Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -63,18 +56,12 @@ class SalesList extends StatelessWidget {
           )
               : ListView.builder(
             padding: const EdgeInsets.only(bottom: 100),
-            itemCount: allSales.length + pendingSales.length,
+            itemCount: sales.length,
             itemBuilder: (context, index) {
-              if (index < allSales.length) {
-                return _SavedSaleItem(sale: allSales[index]);
-              } else {
-                final pendingIndex = index - allSales.length;
-                return _PendingSaleItem(
-                  sale: pendingSales[pendingIndex],
-                  onRemove: () => onRemovePending(pendingIndex),
-                  onQuantityUpdate: (delta) => onUpdateQuantity(pendingIndex, delta),
-                );
-              }
+              return _SaleItem(
+                sale: sales[index],
+                onUpdateQuantity: onUpdateQuantity,
+              );
             },
           ),
         );
@@ -83,14 +70,85 @@ class SalesList extends StatelessWidget {
   }
 }
 
-class _SavedSaleItem extends StatelessWidget {
+class _SaleItem extends StatelessWidget {
   final Map<String, dynamic> sale;
+  final Function(int, int) onUpdateQuantity;
 
-  const _SavedSaleItem({required this.sale});
+  const _SaleItem({
+    required this.sale,
+    required this.onUpdateQuantity,
+  });
+
+  void _showQuantityPicker(BuildContext context) {
+    final currentQuantity = sale['quantity'] as int;
+    int selectedQuantity = currentQuantity;
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 250,
+          color: Colors.white,
+          child: Column(
+            children: [
+              Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      child: const Text('İptal'),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Text(
+                      'Adet Seç',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    CupertinoButton(
+                      child: const Text('Tamam'),
+                      onPressed: () {
+                        onUpdateQuantity(sale['id'], selectedQuantity);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  scrollController: FixedExtentScrollController(
+                    initialItem: currentQuantity - 1,
+                  ),
+                  itemExtent: 40,
+                  onSelectedItemChanged: (int index) {
+                    selectedQuantity = index + 1;
+                  },
+                  children: List.generate(
+                    100,
+                        (index) => Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final itemTotal = (sale['quantity'] * sale['basePriceCents']) / 100;
+    final quantity = sale['quantity'] as int;
+    final itemTotal = (quantity * sale['basePriceCents']) / 100;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
@@ -112,87 +170,7 @@ class _SavedSaleItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${sale['companyName']} • ${sale['quantity']} adet',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${itemTotal.toStringAsFixed(2)} ₺',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PendingSaleItem extends StatelessWidget {
-  final PendingSale sale;
-  final VoidCallback onRemove;
-  final Function(int) onQuantityUpdate;
-
-  const _PendingSaleItem({
-    required this.sale,
-    required this.onRemove,
-    required this.onQuantityUpdate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final itemTotal = sale.item.basePriceTL * sale.quantity;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      color: const Color(0xFFFFF8E1),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFA726),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'BEKLEMEDE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        sale.item.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A202C),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${sale.item.basePriceTL.toStringAsFixed(2)} ₺',
+                  sale['companyName'],
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -205,22 +183,36 @@ class _PendingSaleItem extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
-                onPressed: () => onQuantityUpdate(-1),
+                onPressed: () => onUpdateQuantity(sale['id'], quantity - 1),
                 color: const Color(0xFFE53E3E),
-                iconSize: 20,
+                iconSize: 24,
               ),
-              Text(
-                '${sale.quantity}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              GestureDetector(
+                onTap: () => _showQuantityPicker(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Text(
+                    '$quantity',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
-                onPressed: () => onQuantityUpdate(1),
+                onPressed: () => onUpdateQuantity(sale['id'], quantity + 1),
                 color: const Color(0xFF38A169),
-                iconSize: 20,
+                iconSize: 24,
               ),
             ],
           ),
@@ -232,12 +224,6 @@ class _PendingSaleItem extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: Color(0xFF1A202C),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: onRemove,
-            color: const Color(0xFFE53E3E),
-            iconSize: 20,
           ),
         ],
       ),
