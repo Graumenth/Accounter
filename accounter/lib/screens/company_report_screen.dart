@@ -1,21 +1,28 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import '../services/database_service.dart';
-import '../models/sale.dart';
+import '../../services/database_service.dart';
+import '../../models/sale.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:io';
+import 'package:cross_file/cross_file.dart';
 import 'package:pdf/pdf.dart';
+import 'settings/widgets/profile_manager.dart';
 
 class CompanyReportScreen extends StatefulWidget {
   final int companyId;
   final String companyName;
+  final String? startDate;
+  final String? endDate;
 
   const CompanyReportScreen({
     super.key,
     required this.companyId,
     required this.companyName,
+    this.startDate,
+    this.endDate,
   });
 
   @override
@@ -25,12 +32,19 @@ class CompanyReportScreen extends StatefulWidget {
 class _CompanyReportScreenState extends State<CompanyReportScreen> {
   Map<String, dynamic>? reportData;
   bool isLoading = true;
-  DateTime startDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime endDate = DateTime.now();
+  late DateTime startDate;
+  late DateTime endDate;
 
   @override
   void initState() {
     super.initState();
+    if (widget.startDate != null && widget.endDate != null) {
+      startDate = Sale.stringToDate(widget.startDate!);
+      endDate = Sale.stringToDate(widget.endDate!);
+    } else {
+      startDate = DateTime.now().subtract(const Duration(days: 30));
+      endDate = DateTime.now();
+    }
     loadReport();
   }
 
@@ -55,6 +69,9 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
     final pdf = pw.Document();
     final items = reportData!['items'] as List<Map<String, dynamic>>;
     final dailySales = reportData!['dailySales'] as List<Map<String, dynamic>>;
+
+    final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+    final ttf = pw.Font.ttf(fontData);
 
     final dates = <String>{};
     for (var sale in dailySales) {
@@ -84,67 +101,67 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       itemTotals[itemId] = (itemTotals[itemId] ?? 0) + quantity;
     }
 
-    final tableHeaders = ['Tarih'] + items.map((item) => item['name'].toString()).toList();
-    final tableRows = <List<String>>[];
+    final tableHeaders = ['Tarih', ...items.map((item) => item['name'].toString())];
+
+    final tableData = <List<String>>[];
     for (final date in sortedDates) {
-      final row = <String>[];
-      row.add(DateFormat('dd.MM.yyyy').format(DateTime.parse(date)));
-      for (final item in items) {
-        final quantity = salesMap[date]?[item['id'] as int] ?? 0;
-        row.add(quantity > 0 ? quantity.toString() : '-');
-      }
-      tableRows.add(row);
+      final row = <String>[
+        DateFormat('dd.MM.yyyy').format(DateTime.parse(date)),
+        ...items.map((item) {
+          final quantity = salesMap[date]?[item['id'] as int] ?? 0;
+          return quantity > 0 ? quantity.toString() : '-';
+        }),
+      ];
+      tableData.add(row);
     }
 
-    final totalRow = ['Toplam Birim'] +
-        items.map((item) => (itemTotals[item['id'] as int] ?? 0).toString()).toList();
-    final priceRow = ['Birim Fiyat'] +
-        items
-            .map((item) => '₺${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}')
-            .toList();
-    final totalPriceRow = [
-      'Toplam Fiyat'
-    ]..addAll(items.map((item) {
-      final total = itemTotals[item['id'] as int] ?? 0;
-      final price = (item['base_price_cents'] as int) / 100;
-      final totalPrice = total * price;
-      return '₺${totalPrice.toStringAsFixed(2)}';
-    }));
+    tableData.add([
+      'Toplam Birim',
+      ...items.map((item) => (itemTotals[item['id'] as int] ?? 0).toString()),
+    ]);
 
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          pw.Text(widget.companyName, style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 16),
-          pw.Table.fromTextArray(
-            headers: tableHeaders,
-            data: tableRows,
-            cellAlignment: pw.Alignment.center,
-          ),
-          pw.Table.fromTextArray(
-            headers: tableHeaders,
-            data: [totalRow],
-            cellAlignment: pw.Alignment.center,
-          ),
-          pw.Table.fromTextArray(
-            headers: tableHeaders,
-            data: [priceRow],
-            cellAlignment: pw.Alignment.center,
-          ),
-          pw.Table.fromTextArray(
-            headers: tableHeaders,
-            data: [totalPriceRow],
-            cellAlignment: pw.Alignment.center,
-          ),
-        ],
-      ),
-    );
+    tableData.add([
+      'Birim Fiyat',
+      ...items.map((item) => 'TL ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}'),
+    ]);
+
+    tableData.add([
+      'Toplam Fiyat',
+      ...items.map((item) {
+        final total = itemTotals[item['id'] as int] ?? 0;
+        final price = (item['base_price_cents'] as int) / 100;
+        return 'TL ${(total * price).toStringAsFixed(2)}';
+      }),
+    ]);
+
+    final myCompanyName = await ProfileManager.getCompanyName();
+    final shareDate = DateFormat('dd_MM_yyyy').format(DateTime.now());
+
+    final fileName = '${myCompanyName}_${widget.companyName}_$shareDate.pdf'
+        .replaceAll(' ', '_')
+        .replaceAll('ı', 'i')
+        .replaceAll('İ', 'I')
+        .replaceAll('ş', 's')
+        .replaceAll('Ş', 'S')
+        .replaceAll('ğ', 'g')
+        .replaceAll('Ğ', 'G')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ü', 'U')
+        .replaceAll('ö', 'o')
+        .replaceAll('Ö', 'O')
+        .replaceAll('ç', 'c')
+        .replaceAll('Ç', 'C');
 
     final output = await getTemporaryDirectory();
-    final file = File('${output.path}/rapor.pdf');
+    final file = File('${output.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
-    await Share.shareXFiles([XFile(file.path)], text: '${widget.companyName} Satış Raporu');
+
+    final params = ShareParams(
+      files: [XFile(file.path)],
+      subject: '${widget.companyName} Satış Raporu',
+      text: 'Satış raporu ektedir.',
+    );
+    await SharePlus.instance.share(params);
   }
 
   @override
@@ -276,7 +293,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Colors.white.withAlpha((0.3).round())),
+          right: BorderSide(color: Colors.white.withAlpha(77)),
         ),
       ),
       child: Text(
@@ -370,7 +387,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       ) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF38A169).withAlpha((0.1).round()),
+        color: const Color(0xFF38A169).withAlpha(25),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/settings_screen.dart';
-import 'screens/statistics_screen.dart';
+import 'screens/settings/settings_screen.dart';
+import 'screens/statistics/statistics_screen.dart';
 import 'screens/company_report_screen.dart';
 
 void main() {
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         useMaterial3: true,
       ),
-      home: const HomeScreen(), // *** EKLENEN SATIR ***
+      home: const HomeScreen(),
       routes: {
         '/settings': (context) => const SettingsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
@@ -43,6 +43,8 @@ class MyApp extends StatelessWidget {
             builder: (context) => CompanyReportScreen(
               companyId: args['companyId'],
               companyName: args['companyName'],
+              startDate: args['startDate'],
+              endDate: args['endDate'],
             ),
           );
         }
