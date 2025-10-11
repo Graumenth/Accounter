@@ -38,27 +38,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadData() async {
-    print('🔄 loadData başladı');
     setState(() => isLoading = true);
 
     try {
       companies = await DatabaseService.instance.getAllCompanies();
       items = await DatabaseService.instance.getAllItems();
 
-      print('✅ Companies: ${companies.length}');
-      print('✅ Items: ${items.length}');
-
       if (companies.isNotEmpty) {
         selectedCompany = companies.first;
-        print('✅ Selected company: ${selectedCompany!.name}');
-      } else {
-        print('⚠️ Companies boş!');
       }
 
       await loadDailySales();
-      print('✅ loadData bitti');
     } catch (e) {
-      print('❌ HATA loadData: $e');
+      print('Error loadData: $e');
     } finally {
       setState(() => isLoading = false);
     }
@@ -66,19 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadDailySales() async {
     try {
-      print('🔄 loadDailySales başladı');
       final dateStr = Sale.dateToString(selectedDate);
-      print('📅 Tarih: $dateStr');
 
       sales = await DatabaseService.instance.getDailySales(dateStr);
       dailyTotal = await DatabaseService.instance.getDailyTotal(dateStr);
 
-      print('✅ Sales: ${sales.length}');
-      print('💰 Total: $dailyTotal');
-
       filterSales();
     } catch (e) {
-      print('❌ HATA loadDailySales: $e');
+      print('Error loadDailySales: $e');
     }
   }
 
@@ -112,7 +99,26 @@ class _HomeScreenState extends State<HomeScreen> {
     filterSales();
   }
 
+  bool _isItemAlreadyAddedToday(int itemId, int companyId) {
+    return sales.any((sale) {
+      return sale['itemId'] == itemId && sale['companyId'] == companyId;
+    });
+  }
+
   Future<void> addSale(Item item, int companyId) async {
+    if (_isItemAlreadyAddedToday(item.id!, companyId)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${item.name} bu şirkete bugün zaten eklenmiş'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
     final sale = Sale(
       itemId: item.id!,
       date: Sale.dateToString(selectedDate),
@@ -191,9 +197,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ItemGrid(
               companies: companies,
               items: items,
-              selectedCompany: selectedCompany,
+              selectedCompany: selectedCompanyFilter != null
+                  ? companies.firstWhere((c) => c.id == selectedCompanyFilter)
+                  : selectedCompany,
               onCompanyChanged: (company) => setState(() => selectedCompany = company),
               onClose: () => setState(() => showItemGrid = false),
+              hideCompanySelector: selectedCompanyFilter != null,
+              onAddItem: addSale,
             ),
 
           DailyTotalBar(

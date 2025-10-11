@@ -1,8 +1,13 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path/path.dart' as p;
+import 'package:permission_handler/permission_handler.dart';
 import '../services/database_service.dart';
 import '../models/company.dart';
 import '../models/item.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,6 +17,33 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
+  Future<void> backupDatabase(BuildContext context) async {
+    var storageStatus = await Permission.storage.request();
+    var manageStatus = await Permission.manageExternalStorage.request();
+
+    if (storageStatus.isGranted || manageStatus.isGranted) {
+      final databasesPath = await getDatabasesPath();
+      final dbPath = p.join(databasesPath, 'accounter.db');
+      await Share.shareXFiles([XFile(dbPath)], text: 'Accounter DB Backup');
+    } else {
+      if (!storageStatus.isGranted) {
+        storageStatus = await Permission.storage.request();
+      }
+      if (!manageStatus.isGranted) {
+        manageStatus = await Permission.manageExternalStorage.request();
+      }
+      if (storageStatus.isGranted || manageStatus.isGranted) {
+        final databasesPath = await getDatabasesPath();
+        final dbPath = p.join(databasesPath, 'accounter.db');
+        await Share.shareXFiles([XFile(dbPath)], text: 'Accounter DB Backup');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dosya paylaşmak için depolama izni gerekli! Ayarlardan izin verin.')),
+        );
+      }
+    }
+  }
+
   late TabController _tabController;
 
   List<Company> companies = [];
@@ -327,6 +359,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
       );
 
+      if (!mounted) return;
+
       if (confirm == true) {
         await DatabaseService.instance.deleteItem(item.id!);
         loadData();
@@ -429,7 +463,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             Tab(text: 'Ürünler'),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.backup, color: Color(0xFF38A169)),
+            tooltip: 'Backup Database',
+            onPressed: () => backupDatabase(context),
+          ),
+        ],
       ),
+
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(

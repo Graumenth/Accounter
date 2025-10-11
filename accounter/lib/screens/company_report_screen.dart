@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/database_service.dart';
 import '../models/sale.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
+import 'package:pdf/pdf.dart';
 
 class CompanyReportScreen extends StatefulWidget {
   final int companyId;
@@ -44,6 +49,104 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
     setState(() => isLoading = false);
   }
 
+  Future<void> exportTableAsPdf() async {
+    if (reportData == null) return;
+
+    final pdf = pw.Document();
+    final items = reportData!['items'] as List<Map<String, dynamic>>;
+    final dailySales = reportData!['dailySales'] as List<Map<String, dynamic>>;
+
+    final dates = <String>{};
+    for (var sale in dailySales) {
+      dates.add(sale['date'] as String);
+    }
+    final sortedDates = dates.toList()..sort();
+
+    final salesMap = <String, Map<int, int>>{};
+    for (var sale in dailySales) {
+      final date = sale['date'] as String;
+      final itemId = sale['itemId'] as int;
+      final quantity = sale['quantity'] as int;
+
+      if (!salesMap.containsKey(date)) {
+        salesMap[date] = {};
+      }
+      salesMap[date]![itemId] = quantity;
+    }
+
+    final itemTotals = <int, int>{};
+    for (var item in items) {
+      itemTotals[item['id'] as int] = 0;
+    }
+    for (var sale in dailySales) {
+      final itemId = sale['itemId'] as int;
+      final quantity = sale['quantity'] as int;
+      itemTotals[itemId] = (itemTotals[itemId] ?? 0) + quantity;
+    }
+
+    final tableHeaders = ['Tarih'] + items.map((item) => item['name'].toString()).toList();
+    final tableRows = <List<String>>[];
+    for (final date in sortedDates) {
+      final row = <String>[];
+      row.add(DateFormat('dd.MM.yyyy').format(DateTime.parse(date)));
+      for (final item in items) {
+        final quantity = salesMap[date]?[item['id'] as int] ?? 0;
+        row.add(quantity > 0 ? quantity.toString() : '-');
+      }
+      tableRows.add(row);
+    }
+
+    final totalRow = ['Toplam Birim'] +
+        items.map((item) => (itemTotals[item['id'] as int] ?? 0).toString()).toList();
+    final priceRow = ['Birim Fiyat'] +
+        items
+            .map((item) => '₺${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}')
+            .toList();
+    final totalPriceRow = [
+      'Toplam Fiyat'
+    ]..addAll(items.map((item) {
+      final total = itemTotals[item['id'] as int] ?? 0;
+      final price = (item['base_price_cents'] as int) / 100;
+      final totalPrice = total * price;
+      return '₺${totalPrice.toStringAsFixed(2)}';
+    }));
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Text(widget.companyName, style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 16),
+          pw.Table.fromTextArray(
+            headers: tableHeaders,
+            data: tableRows,
+            cellAlignment: pw.Alignment.center,
+          ),
+          pw.Table.fromTextArray(
+            headers: tableHeaders,
+            data: [totalRow],
+            cellAlignment: pw.Alignment.center,
+          ),
+          pw.Table.fromTextArray(
+            headers: tableHeaders,
+            data: [priceRow],
+            cellAlignment: pw.Alignment.center,
+          ),
+          pw.Table.fromTextArray(
+            headers: tableHeaders,
+            data: [totalPriceRow],
+            cellAlignment: pw.Alignment.center,
+          ),
+        ],
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File('${output.path}/rapor.pdf');
+    await file.writeAsBytes(await pdf.save());
+    await Share.shareXFiles([XFile(file.path)], text: '${widget.companyName} Satış Raporu');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,6 +171,14 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
           : reportData == null
           ? const Center(child: Text('Veri yok'))
           : _buildReport(),
+      floatingActionButton: reportData == null
+          ? null
+          : FloatingActionButton(
+        onPressed: exportTableAsPdf,
+        backgroundColor: const Color(0xFF38A169),
+        child: const Icon(Icons.share),
+        heroTag: "shareCompanyReport",
+      ),
     );
   }
 
@@ -103,7 +214,6 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
     for (var item in items) {
       itemTotals[item['id'] as int] = 0;
     }
-
     for (var sale in dailySales) {
       final itemId = sale['itemId'] as int;
       final quantity = sale['quantity'] as int;
@@ -166,7 +276,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border(
-          right: BorderSide(color: Colors.white.withOpacity(0.3)),
+          right: BorderSide(color: Colors.white.withAlpha((0.3).round())),
         ),
       ),
       child: Text(
@@ -260,7 +370,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       ) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF38A169).withOpacity(0.1),
+        color: const Color(0xFF38A169).withAlpha((0.1).round()),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),

@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/database_service.dart';
 import '../models/sale.dart';
+import 'dart:io';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/pdf.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -57,6 +62,168 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     setState(() => isLoading = false);
   }
 
+  Future<void> exportStatisticsAsPdf() async {
+    if (statistics == null) return;
+
+    final pdf = pw.Document();
+    final total = statistics!['total'] as Map<String, dynamic>;
+    final companies = statistics!['companies'] as List<Map<String, dynamic>>;
+    final items = statistics!['items'] as List<Map<String, dynamic>>;
+    final daily = statistics!['daily'] as List<Map<String, dynamic>>;
+
+    final totalAmount = (total['totalAmount'] ?? 0) as int;
+    final totalQuantity = (total['totalQuantity'] ?? 0) as int;
+    final totalSales = (total['totalSales'] ?? 0) as int;
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) {
+          final widgets = <pw.Widget>[];
+
+          widgets.add(pw.Text(
+            'Satış İstatistikleri',
+            style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+          ));
+          widgets.add(pw.SizedBox(height: 8));
+          widgets.add(pw.Text(
+            _getPeriodText(),
+            style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
+          ));
+          widgets.add(pw.SizedBox(height: 20));
+
+          widgets.add(pw.Text(
+            'Özet',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ));
+          widgets.add(pw.SizedBox(height: 8));
+
+          widgets.add(pw.Table.fromTextArray(
+            headers: ['Toplam (₺)', 'Adet', 'Satış', 'Ortalama (₺)'],
+            data: [
+              [
+                (totalAmount / 100).toStringAsFixed(2),
+                totalQuantity.toString(),
+                totalSales.toString(),
+                totalSales > 0 ? (totalAmount / totalSales / 100).toStringAsFixed(2) : '0.00'
+              ]
+            ],
+            cellAlignment: pw.Alignment.center,
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            cellStyle: const pw.TextStyle(fontSize: 11),
+            cellHeight: 30,
+            border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
+          ));
+
+          if (companies.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 20));
+            widgets.add(pw.Text(
+              'Şirketlere Göre Satışlar',
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            ));
+            widgets.add(pw.SizedBox(height: 8));
+
+            widgets.add(pw.Table.fromTextArray(
+              headers: ['Şirket', 'Adet', 'Toplam (₺)'],
+              data: companies.map((c) => [
+                c['name'].toString(),
+                c['quantity'].toString(),
+                ((c['total'] as int) / 100).toStringAsFixed(2)
+              ]).toList(),
+              cellAlignment: pw.Alignment.centerLeft,
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              cellStyle: const pw.TextStyle(fontSize: 11),
+              cellHeight: 30,
+              border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
+            ));
+          }
+
+          if (items.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 20));
+            widgets.add(pw.Text(
+              'Ürünlere Göre Satışlar',
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            ));
+            widgets.add(pw.SizedBox(height: 8));
+
+            widgets.add(pw.Table.fromTextArray(
+              headers: ['Ürün', 'Adet', 'Toplam (₺)'],
+              data: items.map((i) => [
+                i['name'].toString(),
+                i['quantity'].toString(),
+                ((i['total'] as int) / 100).toStringAsFixed(2)
+              ]).toList(),
+              cellAlignment: pw.Alignment.centerLeft,
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              cellStyle: const pw.TextStyle(fontSize: 11),
+              cellHeight: 30,
+              border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
+            ));
+          }
+
+          if (daily.isNotEmpty && selectedPeriod != 'today') {
+            widgets.add(pw.SizedBox(height: 20));
+            widgets.add(pw.Text(
+              'Günlük Dağılım',
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            ));
+            widgets.add(pw.SizedBox(height: 8));
+
+            widgets.add(pw.Table.fromTextArray(
+              headers: ['Tarih', 'Toplam (₺)'],
+              data: daily.map((d) => [
+                DateFormat('dd.MM.yyyy').format(DateTime.parse(d['date'].toString())),
+                ((d['total'] as int) / 100).toStringAsFixed(2)
+              ]).toList(),
+              cellAlignment: pw.Alignment.center,
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              cellStyle: const pw.TextStyle(fontSize: 11),
+              cellHeight: 30,
+              border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
+            ));
+          }
+
+          return widgets;
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File('${output.path}/istatistikler_${_getPeriodFileName()}.pdf');
+    await file.writeAsBytes(await pdf.save());
+    await Share.shareXFiles([XFile(file.path)], text: 'Satış İstatistikleri - ${_getPeriodText()}');
+  }
+
+  String _getPeriodText() {
+    switch (selectedPeriod) {
+      case 'today':
+        return 'Bugün - ${DateFormat('dd.MM.yyyy').format(startDate)}';
+      case 'week':
+        return 'Bu Hafta - ${DateFormat('dd.MM').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}';
+      case 'month':
+        return 'Bu Ay - ${DateFormat('MMMM yyyy', 'tr_TR').format(startDate)}';
+      default:
+        return '';
+    }
+  }
+
+  String _getPeriodFileName() {
+    switch (selectedPeriod) {
+      case 'today':
+        return DateFormat('dd_MM_yyyy').format(startDate);
+      case 'week':
+        return 'hafta_${DateFormat('dd_MM_yyyy').format(startDate)}';
+      case 'month':
+        return DateFormat('MM_yyyy').format(startDate);
+      default:
+        return 'rapor';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,6 +255,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
         ],
       ),
+      floatingActionButton: (!isLoading && statistics != null)
+          ? FloatingActionButton(
+        onPressed: exportStatisticsAsPdf,
+        backgroundColor: const Color(0xFF38A169),
+        child: const Icon(Icons.share),
+        heroTag: "shareStatistics",
+      )
+          : null,
     );
   }
 
@@ -195,11 +370,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ...items.map((item) => _buildItemStat(item)),
         ],
         const SizedBox(height: 24),
-        if (daily.isNotEmpty) ...[
-          _buildSectionTitle('📈 Günlük Trend'),
+        if (daily.isNotEmpty && selectedPeriod != 'today') ...[
+          _buildSectionTitle('📈 Günlük Dağılım'),
           const SizedBox(height: 12),
           _buildDailyChart(daily),
         ],
+        const SizedBox(height: 80),
       ],
     );
   }
@@ -212,7 +388,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha((0.05).round()),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

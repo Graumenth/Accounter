@@ -8,6 +8,8 @@ class ItemGrid extends StatelessWidget {
   final Company? selectedCompany;
   final Function(Company?) onCompanyChanged;
   final VoidCallback onClose;
+  final bool hideCompanySelector;
+  final Function(Item, int) onAddItem;
 
   const ItemGrid({
     super.key,
@@ -16,12 +18,14 @@ class ItemGrid extends StatelessWidget {
     required this.selectedCompany,
     required this.onCompanyChanged,
     required this.onClose,
+    required this.onAddItem,
+    this.hideCompanySelector = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 240,
+      height: hideCompanySelector ? 200 : 240,
       color: Colors.white,
       child: Column(
         children: [
@@ -29,41 +33,80 @@ class ItemGrid extends StatelessWidget {
             height: 2,
             color: const Color(0xFFE2E8F0),
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: companies.isEmpty
-                      ? const Text('Şirket yok')
-                      : DropdownButtonFormField<Company>(
-                    value: selectedCompany,
-                    decoration: const InputDecoration(
-                      labelText: 'Şirket',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+          if (!hideCompanySelector)
+            Container(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: companies.isEmpty
+                        ? const Text('Şirket yok')
+                        : DropdownButtonFormField<Company>(
+                      value: selectedCompany,
+                      decoration: const InputDecoration(
+                        labelText: 'Şirket',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      items: companies.map((company) {
+                        return DropdownMenuItem(
+                          value: company,
+                          child: Text(company.name),
+                        );
+                      }).toList(),
+                      onChanged: onCompanyChanged,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: onClose,
+                    color: const Color(0xFF4A5568),
+                  ),
+                ],
+              ),
+            ),
+          if (hideCompanySelector)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38A169).withAlpha((0.1).round()),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF38A169)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.business, color: Color(0xFF38A169), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            selectedCompany?.name ?? '',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF38A169),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    items: companies.map((company) {
-                      return DropdownMenuItem(
-                        value: company,
-                        child: Text(company.name),
-                      );
-                    }).toList(),
-                    onChanged: onCompanyChanged,
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onClose,
-                  color: const Color(0xFF4A5568),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: onClose,
+                    color: const Color(0xFF4A5568),
+                  ),
+                ],
+              ),
             ),
-          ),
           Expanded(
             child: items.isEmpty
                 ? Center(

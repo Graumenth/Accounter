@@ -6,14 +6,14 @@ class SalesList extends StatelessWidget {
   final bool isLoading;
   final List<Map<String, dynamic>> sales;
   final Function(int, int) onUpdateQuantity;
-  final Function(Item, int) onAddItem;
+  final Function(Item, int)? onAddItem;
 
   const SalesList({
     super.key,
     required this.isLoading,
     required this.sales,
     required this.onUpdateQuantity,
-    required this.onAddItem,
+    this.onAddItem,
   });
 
   @override
@@ -23,10 +23,15 @@ class SalesList extends StatelessWidget {
     }
 
     return DragTarget<Map<String, dynamic>>(
-      onWillAcceptWithDetails: (details) => details.data['item'] != null && details.data['companyId'] != null,
+      onWillAcceptWithDetails: (details) =>
+      onAddItem != null &&
+          details.data['item'] != null &&
+          details.data['companyId'] != null,
       onAcceptWithDetails: (details) {
-        final data = details.data;
-        onAddItem(data['item'] as Item, data['companyId'] as int);
+        if (onAddItem != null) {
+          final data = details.data;
+          onAddItem!(data['item'] as Item, data['companyId'] as int);
+        }
       },
       builder: (context, candidateData, rejectedData) {
         return Container(

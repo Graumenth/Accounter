@@ -130,6 +130,8 @@ class DatabaseService {
     final result = await db.rawQuery('''
       SELECT 
         sales.id,
+        sales.item_id as itemId,
+        sales.company_id as companyId,
         sales.quantity,
         sales.unit_price,
         items.name as itemName,

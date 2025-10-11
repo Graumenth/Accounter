@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         useMaterial3: true,
       ),
+      home: const HomeScreen(), // *** EKLENEN SATIR ***
       routes: {
         '/settings': (context) => const SettingsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
