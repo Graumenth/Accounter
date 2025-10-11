@@ -33,7 +33,7 @@ class AppHeader extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.bar_chart, color: Color(0xFF4A5568)),
-                onPressed: () {},
+                onPressed: () => Navigator.pushNamed(context, '/statistics'),
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Color(0xFF4A5568)),

@@ -178,4 +178,102 @@ class DatabaseService {
       whereArgs: [saleId],
     );
   }
+
+  Future<Map<String, dynamic>> getStatistics(String startDate, String endDate) async {
+    final db = await database;
+
+    final totalResult = await db.rawQuery('''
+    SELECT 
+      COUNT(*) as totalSales,
+      SUM(sales.quantity) as totalQuantity,
+      SUM(sales.quantity * items.base_price_cents) as totalAmount
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    WHERE sales.date BETWEEN ? AND ?
+  ''', [startDate, endDate]);
+
+    final companySales = await db.rawQuery('''
+    SELECT 
+      companies.name,
+      companies.id,
+      SUM(sales.quantity * items.base_price_cents) as total,
+      SUM(sales.quantity) as quantity
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    JOIN companies ON sales.company_id = companies.id
+    WHERE sales.date BETWEEN ? AND ?
+    GROUP BY companies.id
+    ORDER BY total DESC
+  ''', [startDate, endDate]);
+
+    final itemSales = await db.rawQuery('''
+    SELECT 
+      items.name,
+      items.color,
+      SUM(sales.quantity) as quantity,
+      SUM(sales.quantity * items.base_price_cents) as total
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    WHERE sales.date BETWEEN ? AND ?
+    GROUP BY items.id
+    ORDER BY total DESC
+  ''', [startDate, endDate]);
+
+    final dailySales = await db.rawQuery('''
+    SELECT 
+      sales.date,
+      SUM(sales.quantity * items.base_price_cents) as total
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    WHERE sales.date BETWEEN ? AND ?
+    GROUP BY sales.date
+    ORDER BY sales.date ASC
+  ''', [startDate, endDate]);
+
+    return {
+      'total': totalResult.first,
+      'companies': companySales,
+      'items': itemSales,
+      'daily': dailySales,
+    };
+  }
+
+  Future<Map<String, dynamic>> getCompanyMonthlyReport(int companyId, String startDate, String endDate) async {
+    final db = await database;
+
+    final companyInfo = await db.query(
+      'companies',
+      where: 'id = ?',
+      whereArgs: [companyId],
+    );
+
+    final items = await db.rawQuery('''
+    SELECT DISTINCT items.id, items.name, items.base_price_cents, items.color
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    WHERE sales.company_id = ?
+    AND sales.date BETWEEN ? AND ?
+    ORDER BY items.name
+  ''', [companyId, startDate, endDate]);
+
+    final dailySales = await db.rawQuery('''
+    SELECT 
+      sales.date,
+      items.id as itemId,
+      items.name as itemName,
+      SUM(sales.quantity) as quantity
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    WHERE sales.company_id = ?
+    AND sales.date BETWEEN ? AND ?
+    GROUP BY sales.date, items.id
+    ORDER BY sales.date ASC, items.name
+  ''', [companyId, startDate, endDate]);
+
+    return {
+      'company': companyInfo.first,
+      'items': items,
+      'dailySales': dailySales,
+    };
+  }
 }
