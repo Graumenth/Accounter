@@ -119,24 +119,64 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       'Toplam Birim',
       ...items.map((item) => (itemTotals[item['id'] as int] ?? 0).toString()),
     ]);
-
     tableData.add([
       'Birim Fiyat',
-      ...items.map((item) => 'TL ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}'),
+      ...items.map((item) => '₺${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}'),
     ]);
-
     tableData.add([
       'Toplam Fiyat',
       ...items.map((item) {
         final total = itemTotals[item['id'] as int] ?? 0;
         final price = (item['base_price_cents'] as int) / 100;
-        return 'TL ${(total * price).toStringAsFixed(2)}';
+        return '₺${(total * price).toStringAsFixed(2)}';
       }),
     ]);
 
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                '${widget.companyName} Satış Raporu',
+                style: pw.TextStyle(font: ttf, fontSize: 18, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 12),
+              pw.Table(
+                border: pw.TableBorder.all(),
+                defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
+                children: [
+                  // Header
+                  pw.TableRow(
+                    children: tableHeaders
+                        .map((header) => pw.Padding(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(header, style: pw.TextStyle(font: ttf, fontWeight: pw.FontWeight.bold)),
+                    ))
+                        .toList(),
+                  ),
+                  // Data Rows
+                  ...tableData.map(
+                        (row) => pw.TableRow(
+                      children: row
+                          .map((cell) => pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text(cell, style: pw.TextStyle(font: ttf)),
+                      ))
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
     final myCompanyName = await ProfileManager.getCompanyName();
     final shareDate = DateFormat('dd_MM_yyyy').format(DateTime.now());
-
     final fileName = '${myCompanyName}_${widget.companyName}_$shareDate.pdf'
         .replaceAll(' ', '_')
         .replaceAll('ı', 'i')
