@@ -128,104 +128,136 @@ class ItemGrid extends StatelessWidget {
                 final item = items[index];
                 final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
 
-                return GestureDetector(
-                  onTap: () {
-                    if (selectedCompany != null) {
-                      onAddItem(item, selectedCompany!.id!);
-                    }
-                  },
-                  child: Draggable<Map<String, dynamic>>(
-                    data: {
-                      'item': item,
-                      'companyId': selectedCompany!.id!,
-                    },
-                    feedback: Material(
-                      elevation: 8,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 140,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: itemColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              item.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${item.basePriceTL.toStringAsFixed(2)} ₺',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    childWhenDragging: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.grey[400]!,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: itemColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${item.basePriceTL.toStringAsFixed(2)} ₺',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                return _DraggableItemCard(
+                  item: item,
+                  itemColor: itemColor,
+                  selectedCompany: selectedCompany,
+                  onAddItem: onAddItem,
                 );
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DraggableItemCard extends StatelessWidget {
+  final Item item;
+  final Color itemColor;
+  final Company? selectedCompany;
+  final Function(Item, int) onAddItem;
+
+  const _DraggableItemCard({
+    required this.item,
+    required this.itemColor,
+    required this.selectedCompany,
+    required this.onAddItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (selectedCompany == null) {
+      return _buildItemCard();
+    }
+
+    return GestureDetector(
+      onTap: () {
+        onAddItem(item, selectedCompany!.id!);
+      },
+      child: LongPressDraggable<Map<String, dynamic>>(
+        delay: const Duration(milliseconds: 75),
+        hapticFeedbackOnStart: true,
+        data: {
+          'item': item,
+          'companyId': selectedCompany!.id!,
+        },
+        feedback: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 140,
+            height: 100,
+            decoration: BoxDecoration(
+              color: itemColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.basePriceTL.toStringAsFixed(2)} ₺',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        childWhenDragging: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[400]!,
+              width: 2,
+            ),
+          ),
+        ),
+        child: _buildItemCard(),
+      ),
+    );
+  }
+
+  Widget _buildItemCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: itemColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            item.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${item.basePriceTL.toStringAsFixed(2)} ₺',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
             ),
           ),
         ],

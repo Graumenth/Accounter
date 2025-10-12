@@ -63,7 +63,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
     setState(() => isLoading = false);
   }
 
-  Future<void> exportTableAsPdf() async {
+  Future<void> exportTableAsPdf({required bool includePrices}) async {
     if (reportData == null) return;
 
     final pdf = pw.Document();
@@ -85,9 +85,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       final itemId = sale['itemId'] as int;
       final quantity = sale['quantity'] as int;
 
-      if (!salesMap.containsKey(date)) {
-        salesMap[date] = {};
-      }
+      salesMap.putIfAbsent(date, () => {});
       salesMap[date]![itemId] = quantity;
     }
 
@@ -101,96 +99,432 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       itemTotals[itemId] = (itemTotals[itemId] ?? 0) + quantity;
     }
 
-    final tableHeaders = ['Tarih', ...items.map((item) => item['name'].toString())];
+    final myCompanyName = await ProfileManager.getCompanyName();
+    final logoPath = await ProfileManager.getCompanyLogo();
+    final now = DateTime.now();
+    final shareDate = DateFormat('dd_MM_yyyy').format(now);
+    final priceTag = includePrices ? '' : '_fiyatsiz';
+    final fileName = '${myCompanyName}_${widget.companyName}_${shareDate}$priceTag.pdf'
+        .replaceAll(' ', '_')
+        .replaceAll('ı', 'i').replaceAll('İ', 'I')
+        .replaceAll('ş', 's').replaceAll('Ş', 'S')
+        .replaceAll('ğ', 'g').replaceAll('Ğ', 'G')
+        .replaceAll('ü', 'u').replaceAll('Ü', 'U')
+        .replaceAll('ö', 'o').replaceAll('Ö', 'O')
+        .replaceAll('ç', 'c').replaceAll('Ç', 'C');
 
-    final tableData = <List<String>>[];
-    for (final date in sortedDates) {
-      final row = <String>[
-        DateFormat('dd.MM.yyyy').format(DateTime.parse(date)),
-        ...items.map((item) {
-          final quantity = salesMap[date]?[item['id'] as int] ?? 0;
-          return quantity > 0 ? quantity.toString() : '-';
-        }),
-      ];
-      tableData.add(row);
+    pw.ImageProvider? logo;
+    if (logoPath != null && logoPath.isNotEmpty) {
+      final logoFile = File(logoPath);
+      if (await logoFile.exists()) {
+        final logoBytes = await logoFile.readAsBytes();
+        logo = pw.MemoryImage(logoBytes);
+      }
     }
 
-    tableData.add([
-      'Toplam Birim',
-      ...items.map((item) => (itemTotals[item['id'] as int] ?? 0).toString()),
-    ]);
-    tableData.add([
-      'Birim Fiyat',
-      ...items.map((item) => '₺${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)}'),
-    ]);
-    tableData.add([
-      'Toplam Fiyat',
-      ...items.map((item) {
-        final total = itemTotals[item['id'] as int] ?? 0;
-        final price = (item['base_price_cents'] as int) / 100;
-        return '₺${(total * price).toStringAsFixed(2)}';
-      }),
-    ]);
+    final table = pw.Table(
+      border: pw.TableBorder(
+        horizontalInside: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+        verticalInside: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+      ),
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.green700,
+          ),
+          children: [
+            pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              child: pw.Text(
+                'TARİH',
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            ),
+            ...items.map((item) => pw.Container(
+              padding: const pw.EdgeInsets.all(8),
+              child: pw.Text(
+                item['name'].toString(),
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                ),
+                textAlign: pw.TextAlign.center,
+              ),
+            )),
+          ],
+        ),
+        ...sortedDates.map((date) {
+          final isEven = sortedDates.indexOf(date) % 2 == 0;
+          return pw.TableRow(
+            decoration: pw.BoxDecoration(
+              color: isEven ? PdfColors.grey50 : PdfColors.white,
+            ),
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.all(8),
+                child: pw.Text(
+                  DateFormat('dd.MM.yyyy').format(DateTime.parse(date)),
+                  style: pw.TextStyle(font: ttf, fontSize: 9),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              ...items.map((item) {
+                final quantity = salesMap[date]?[item['id'] as int] ?? 0;
+                return pw.Container(
+                  padding: const pw.EdgeInsets.all(8),
+                  child: pw.Text(
+                    quantity > 0 ? quantity.toString() : '-',
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 9,
+                      fontWeight: quantity > 0 ? pw.FontWeight.bold : pw.FontWeight.normal,
+                      color: quantity > 0 ? PdfColors.green700 : PdfColors.grey400,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                );
+              }),
+            ],
+          );
+        }),
+      ],
+    );
 
     pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                '${widget.companyName} Satış Raporu',
-                style: pw.TextStyle(font: ttf, fontSize: 18, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.SizedBox(height: 12),
-              pw.Table(
-                border: pw.TableBorder.all(),
-                defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
-                children: [
-                  // Header
-                  pw.TableRow(
-                    children: tableHeaders
-                        .map((header) => pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: pw.Text(header, style: pw.TextStyle(font: ttf, fontWeight: pw.FontWeight.bold)),
-                    ))
-                        .toList(),
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) => [
+          pw.Container(
+            padding: const pw.EdgeInsets.all(20),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'SATIŞ RAPORU',
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 24,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.green700,
+                            ),
+                          ),
+                          pw.SizedBox(height: 8),
+                          pw.Container(
+                            width: 80,
+                            height: 3,
+                            color: PdfColors.green700,
+                          ),
+                          pw.SizedBox(height: 16),
+                          pw.Text(
+                            myCompanyName,
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (logo != null)
+                      pw.Container(
+                        width: 80,
+                        height: 80,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                        ),
+                        padding: const pw.EdgeInsets.all(4),
+                        child: pw.Image(logo, fit: pw.BoxFit.contain),
+                      ),
+                  ],
+                ),
+                pw.SizedBox(height: 24),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey100,
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
                   ),
-                  // Data Rows
-                  ...tableData.map(
-                        (row) => pw.TableRow(
-                      children: row
-                          .map((cell) => pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(cell, style: pw.TextStyle(font: ttf)),
-                      ))
-                          .toList(),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'MÜŞTERİ',
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 9,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            widget.companyName,
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'TARİH ARALIĞI',
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 9,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Text(
+                            '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}',
+                            style: pw.TextStyle(
+                              font: ttf,
+                              fontSize: 12,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 24),
+          pw.Container(
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+            ),
+            child: pw.Column(
+              children: [
+                table,
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey50,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: PdfColors.grey300, width: 1),
+            ),
+            child: pw.Column(
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TOPLAM BİRİM',
+                      style: pw.TextStyle(
+                        font: ttf,
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
+                    pw.Row(
+                      children: items.map((item) {
+                        return pw.Container(
+                          margin: const pw.EdgeInsets.only(left: 16),
+                          child: pw.Column(
+                            children: [
+                              pw.Text(
+                                item['name'].toString().length > 8
+                                    ? '${item['name'].toString().substring(0, 8)}...'
+                                    : item['name'].toString(),
+                                style: pw.TextStyle(
+                                  font: ttf,
+                                  fontSize: 8,
+                                  color: PdfColors.grey600,
+                                ),
+                              ),
+                              pw.SizedBox(height: 2),
+                              pw.Text(
+                                '${itemTotals[item['id'] as int]}',
+                                style: pw.TextStyle(
+                                  font: ttf,
+                                  fontSize: 11,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                if (includePrices) ...[
+                  pw.Divider(height: 24, color: PdfColors.grey300),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'BİRİM FİYAT',
+                        style: pw.TextStyle(
+                          font: ttf,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.Row(
+                        children: items.map((item) {
+                          final price = (item['base_price_cents'] as int) / 100;
+                          return pw.Container(
+                            margin: const pw.EdgeInsets.only(left: 16),
+                            width: 60,
+                            child: pw.Text(
+                              '₺${price.toStringAsFixed(2)}',
+                              textAlign: pw.TextAlign.center,
+                              style: pw.TextStyle(
+                                font: ttf,
+                                fontSize: 10,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  pw.Divider(height: 24, color: PdfColors.grey300),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(
+                        'TOPLAM FİYAT',
+                        style: pw.TextStyle(
+                          font: ttf,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.Row(
+                        children: items.map((item) {
+                          final total = itemTotals[item['id'] as int] ?? 0;
+                          final price = (item['base_price_cents'] as int) / 100;
+                          final totalPrice = total * price;
+                          return pw.Container(
+                            margin: const pw.EdgeInsets.only(left: 16),
+                            width: 60,
+                            child: pw.Text(
+                              '₺${totalPrice.toStringAsFixed(2)}',
+                              textAlign: pw.TextAlign.center,
+                              style: pw.TextStyle(
+                                font: ttf,
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.green700,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (includePrices) ...[
+            pw.SizedBox(height: 16),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(20),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.green700,
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'GENEL TOPLAM',
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                    ),
+                  ),
+                  pw.Text(
+                    '₺${(() {
+                      double genelToplam = 0;
+                      for (var item in items) {
+                        final total = itemTotals[item['id'] as int] ?? 0;
+                        final price = (item['base_price_cents'] as int) / 100;
+                        genelToplam += total * price;
+                      }
+                      return genelToplam.toStringAsFixed(2);
+                    })()}',
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
                     ),
                   ),
                 ],
               ),
-            ],
-          );
-        },
+            ),
+          ],
+          pw.SizedBox(height: 32),
+          pw.Container(
+            padding: const pw.EdgeInsets.only(top: 16),
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(
+                top: pw.BorderSide(color: PdfColors.grey300, width: 1),
+              ),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Text(
+                  'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(now)}',
+                  style: pw.TextStyle(
+                    font: ttf,
+                    fontSize: 9,
+                    color: PdfColors.grey600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
-
-    final myCompanyName = await ProfileManager.getCompanyName();
-    final shareDate = DateFormat('dd_MM_yyyy').format(DateTime.now());
-    final fileName = '${myCompanyName}_${widget.companyName}_$shareDate.pdf'
-        .replaceAll(' ', '_')
-        .replaceAll('ı', 'i')
-        .replaceAll('İ', 'I')
-        .replaceAll('ş', 's')
-        .replaceAll('Ş', 'S')
-        .replaceAll('ğ', 'g')
-        .replaceAll('Ğ', 'G')
-        .replaceAll('ü', 'u')
-        .replaceAll('Ü', 'U')
-        .replaceAll('ö', 'o')
-        .replaceAll('Ö', 'O')
-        .replaceAll('ç', 'c')
-        .replaceAll('Ç', 'C');
 
     final output = await getTemporaryDirectory();
     final file = File('${output.path}/$fileName');
@@ -202,6 +536,41 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       text: 'Satış raporu ektedir.',
     );
     await SharePlus.instance.share(params);
+  }
+
+  void _showShareMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.attach_money, color: Color(0xFF38A169)),
+                title: const Text('Fiyatlarla Birlikte Paylaş'),
+                subtitle: const Text('Birim ve toplam fiyatlar dahil'),
+                onTap: () {
+                  Navigator.pop(context);
+                  exportTableAsPdf(includePrices: true);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.money_off, color: Color(0xFF4A5568)),
+                title: const Text('Sadece Miktarları Paylaş'),
+                subtitle: const Text('Fiyat bilgileri olmadan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  exportTableAsPdf(includePrices: false);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -231,7 +600,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       floatingActionButton: reportData == null
           ? null
           : FloatingActionButton(
-        onPressed: exportTableAsPdf,
+        onPressed: _showShareMenu,
         backgroundColor: const Color(0xFF38A169),
         child: const Icon(Icons.share),
         heroTag: "shareCompanyReport",

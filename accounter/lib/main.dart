@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(),
       routes: {
         '/settings': (context) => const SettingsScreen(),
         '/statistics': (context) => const StatisticsScreen(),
