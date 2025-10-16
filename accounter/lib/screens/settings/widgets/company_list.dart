@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/company.dart';
+import '../company_detail_screen.dart';
 
 class CompanyList extends StatelessWidget {
   final List<Company> companies;
@@ -42,7 +43,23 @@ class CompanyList extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          trailing: const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.price_change, color: Color(0xFF38A169)),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CompanyDetailScreen(company: company),
+                    ),
+                  );
+                },
+              ),
+              const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
+            ],
+          ),
           onTap: () => onEdit(company),
         );
       },

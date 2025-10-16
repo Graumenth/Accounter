@@ -119,12 +119,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(companyId, item.id!);
+    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
+
     final sale = Sale(
       itemId: item.id!,
       date: Sale.dateToString(selectedDate),
       companyId: companyId,
       quantity: 1,
-      unitPrice: item.basePriceTL,
+      unitPrice: unitPrice,
     );
 
     await DatabaseService.instance.insertSale(sale);

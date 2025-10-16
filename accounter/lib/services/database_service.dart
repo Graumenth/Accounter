@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/company.dart';
 import '../models/item.dart';
 import '../models/sale.dart';
+import '../models/company_item_price.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._privateConstructor();
@@ -22,8 +23,9 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDb,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -56,6 +58,34 @@ class DatabaseService {
         FOREIGN KEY (company_id) REFERENCES companies (id)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE company_item_prices(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
+        item_id INTEGER NOT NULL,
+        custom_price_cents INTEGER NOT NULL,
+        FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+        FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
+        UNIQUE(company_id, item_id)
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE company_item_prices(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          company_id INTEGER NOT NULL,
+          item_id INTEGER NOT NULL,
+          custom_price_cents INTEGER NOT NULL,
+          FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+          FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
+          UNIQUE(company_id, item_id)
+        )
+      ''');
+    }
   }
 
   Future<int> insertCompany(Company company) async {
@@ -116,6 +146,53 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> setCompanyItemPrice(CompanyItemPrice price) async {
+    final db = await database;
+    return await db.insert(
+      'company_item_prices',
+      price.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteCompanyItemPrice(int companyId, int itemId) async {
+    final db = await database;
+    await db.delete(
+      'company_item_prices',
+      where: 'company_id = ? AND item_id = ?',
+      whereArgs: [companyId, itemId],
+    );
+  }
+
+  Future<int?> getCompanyItemPrice(int companyId, int itemId) async {
+    final db = await database;
+    final result = await db.query(
+      'company_item_prices',
+      where: 'company_id = ? AND item_id = ?',
+      whereArgs: [companyId, itemId],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['custom_price_cents'] as int;
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getCompanyItemsWithPrices(int companyId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT 
+        items.*,
+        company_item_prices.custom_price_cents,
+        company_item_prices.id as price_id
+      FROM items
+      LEFT JOIN company_item_prices 
+        ON items.id = company_item_prices.item_id 
+        AND company_item_prices.company_id = ?
+      ORDER BY items.name
+    ''', [companyId]);
   }
 
   Future<int> insertSale(Sale sale) async {

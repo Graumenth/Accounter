@@ -1,0 +1,6 @@
+@echo off
+echo Increasing build number...
+dart build_runner.dart
+echo.
+echo Running app...
+flutter run

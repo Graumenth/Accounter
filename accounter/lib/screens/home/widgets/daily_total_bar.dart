@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../constants/app_colors.dart';
 
 class DailyTotalBar extends StatelessWidget {
   final int dailyTotal;
@@ -14,87 +15,84 @@ class DailyTotalBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double barHeight = 112.0;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      height: barHeight,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A202C),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppColors.surface,
+        border: const Border(
+          top: BorderSide(color: AppColors.border, width: 1),
+        ),
+        boxShadow: AppShadows.sm,
       ),
       child: SafeArea(
         top: false,
-        child: companyTotal != null && companyName != null
-            ? Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            companyTotal != null && companyName != null
+                ? Row(
               children: [
-                Text(
-                  companyName!,
-                  style: const TextStyle(
-                    color: Color(0xFF9CA3AF),
-                    fontSize: 12,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        companyName!,
+                        style: AppTextStyles.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
+                        style: AppTextStyles.heading2,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
+                SizedBox(width: AppSpacing.lg),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Genel Toplam',
+                      style: AppTextStyles.caption,
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
+                      style: AppTextStyles.priceLarge.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
+            )
+                : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Genel Toplam',
-                  style: TextStyle(
-                    color: Color(0xFF9CA3AF),
-                    fontSize: 12,
+                Text(
+                  'Günlük Toplam',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                  style: const TextStyle(
-                    color: Color(0xFF38A169),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+                  style: AppTextStyles.priceLarge.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 28,
                   ),
                 ),
               ],
-            ),
-          ],
-        )
-            : Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Günlük Toplam',
-              style: TextStyle(
-                color: Color(0xFF9CA3AF),
-                fontSize: 14,
-              ),
-            ),
-            Text(
-              '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
             ),
           ],
         ),

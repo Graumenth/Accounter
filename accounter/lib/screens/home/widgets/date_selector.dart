@@ -125,12 +125,8 @@ class _DateSelectorState extends State<DateSelector> {
                         controller: _pageController,
                         itemCount: 1000,
                         itemBuilder: (context, index) {
-                          final dayOffset = index - _currentPage;
-                          final date = DateTime(
-                            widget.selectedDate.year,
-                            widget.selectedDate.month,
-                            widget.selectedDate.day,
-                          ).add(Duration(days: dayOffset));
+                          final dayOffset = index - 500;
+                          final date = todayMidnight.add(Duration(days: dayOffset));
 
                           return AnimatedBuilder(
                             animation: _pageController,

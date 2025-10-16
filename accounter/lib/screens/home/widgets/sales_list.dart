@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../models/item.dart';
+import '../../../constants/app_colors.dart';
 
 class SalesList extends StatelessWidget {
   final bool isLoading;
@@ -19,7 +20,11 @@ class SalesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+        ),
+      );
     }
 
     return DragTarget<Map<String, dynamic>>(
@@ -36,8 +41,8 @@ class SalesList extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           color: candidateData.isNotEmpty
-              ? const Color(0xFF38A169).withValues(alpha: 0.1)
-              : const Color(0xFFF7FAFC),
+              ? AppColors.primary.withOpacity(0.1)
+              : AppColors.background,
           child: sales.isEmpty
               ? Center(
             child: Column(
@@ -46,14 +51,13 @@ class SalesList extends StatelessWidget {
                 Icon(
                   Icons.inbox_outlined,
                   size: 64,
-                  color: Colors.grey[300],
+                  color: AppColors.textDisabled,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppSpacing.lg),
                 Text(
                   'Bu gün için satış yok',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -67,12 +71,12 @@ class SalesList extends StatelessWidget {
                 key: Key(sales[index]['id'].toString()),
                 direction: DismissDirection.endToStart,
                 background: Container(
-                  color: const Color(0xFFE53E3E),
+                  color: AppColors.error,
                   alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
+                  padding: const EdgeInsets.only(right: AppSpacing.xl),
                   child: const Icon(
                     Icons.delete_outline,
-                    color: Colors.white,
+                    color: AppColors.surface,
                     size: 28,
                   ),
                 ),
@@ -91,7 +95,7 @@ class SalesList extends StatelessWidget {
                           ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(true),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE53E3E),
+                              backgroundColor: AppColors.error,
                             ),
                             child: const Text('Sil'),
                           ),
@@ -134,28 +138,44 @@ class _SaleItem extends StatelessWidget {
       builder: (BuildContext context) {
         return Container(
           height: 250,
-          color: Colors.white,
+          color: AppColors.surface,
           child: Column(
             children: [
               Container(
                 height: 50,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.border),
+                  ),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CupertinoButton(
-                      child: const Text('İptal'),
+                      padding: EdgeInsets.zero,
+                      child: const Text(
+                        'İptal',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    const Text(
+                    Text(
                       'Adet Seç',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.heading3,
                     ),
                     CupertinoButton(
-                      child: const Text('Tamam'),
+                      padding: EdgeInsets.zero,
+                      child: Text(
+                        'Tamam',
+                        style: AppTextStyles.button.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                       onPressed: () {
                         onUpdateQuantity(sale['id'], selectedQuantity);
                         Navigator.pop(context);
@@ -178,7 +198,7 @@ class _SaleItem extends StatelessWidget {
                         (index) => Center(
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(fontSize: 24),
+                        style: AppTextStyles.priceLarge,
                       ),
                     ),
                   ),
@@ -197,42 +217,40 @@ class _SaleItem extends StatelessWidget {
     final itemTotal = (quantity * sale['basePriceCents']) / 100;
     final itemColor = sale['itemColor'] != null
         ? Color(int.parse('0xFF${sale['itemColor'].toString().substring(1)}'))
-        : const Color(0xFF38A169);
+        : AppColors.primary;
+
+    final isTabletOrDesktop = MediaQuery.of(context).size.width >= 600;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      color: Colors.white,
+      padding: EdgeInsets.symmetric(
+        horizontal: isTabletOrDesktop ? AppSpacing.xxl : AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
+      color: AppColors.surface,
       child: Row(
         children: [
           Container(
             width: 4,
-            height: 40,
+            height: 44,
             decoration: BoxDecoration(
               color: itemColor,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isTabletOrDesktop ? AppSpacing.lg : AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   sale['itemName'],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1A202C),
-                  ),
+                  style: AppTextStyles.bodyLarge,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   sale['companyName'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: AppTextStyles.bodySecondary,
                 ),
               ],
             ),
@@ -241,46 +259,73 @@ class _SaleItem extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
-                onPressed: () => onUpdateQuantity(sale['id'], quantity - 1),
-                color: const Color(0xFFE53E3E),
-                iconSize: 24,
+                onPressed: () async {
+                  if (quantity == 1) {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Satışı Sil'),
+                          content: const Text('Bu satışı silmek istediğinize emin misiniz?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('İptal'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                              ),
+                              child: const Text('Sil'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (confirm == true) {
+                      onUpdateQuantity(sale['id'], 0);
+                    }
+                  } else {
+                    onUpdateQuantity(sale['id'], quantity - 1);
+                  }
+                },
+                color: AppColors.error,
+                iconSize: isTabletOrDesktop ? 28 : 24,
               ),
               GestureDetector(
                 onTap: () => _showQuantityPicker(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTabletOrDesktop ? AppSpacing.lg : AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7FAFC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: AppColors.surfaceVariant,
+                    borderRadius: AppRadius.mdRadius,
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Text(
                     '$quantity',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.price,
                   ),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.add_circle_outline),
                 onPressed: () => onUpdateQuantity(sale['id'], quantity + 1),
-                color: const Color(0xFF38A169),
-                iconSize: 24,
+                color: AppColors.primary,
+                iconSize: isTabletOrDesktop ? 28 : 24,
               ),
             ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${itemTotal.toStringAsFixed(2)} ₺',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
+          SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            width: isTabletOrDesktop ? 110 : 90,
+            child: Text(
+              '${itemTotal.toStringAsFixed(2)} ₺',
+              textAlign: TextAlign.right,
+              style: AppTextStyles.price,
             ),
           ),
         ],
