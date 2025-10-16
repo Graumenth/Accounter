@@ -23,7 +23,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDb,
       onUpgrade: _onUpgrade,
     );
@@ -33,7 +33,8 @@ class DatabaseService {
     await db.execute('''
       CREATE TABLE companies(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE
+        name TEXT NOT NULL UNIQUE,
+        color TEXT NOT NULL DEFAULT '#2563EB'
       )
     ''');
 
@@ -84,6 +85,12 @@ class DatabaseService {
           FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
           UNIQUE(company_id, item_id)
         )
+      ''');
+    }
+
+    if (oldVersion < 3) {
+      await db.execute('''
+        ALTER TABLE companies ADD COLUMN color TEXT NOT NULL DEFAULT '#2563EB'
       ''');
     }
   }
@@ -227,14 +234,13 @@ class DatabaseService {
   Future<int> getDailyTotal(String date) async {
     final db = await database;
     final result = await db.rawQuery('''
-      SELECT SUM(sales.quantity * items.base_price_cents) as total
+      SELECT SUM(sales.quantity * sales.unit_price * 100) as total
       FROM sales
-      JOIN items ON sales.item_id = items.id
       WHERE sales.date = ?
     ''', [date]);
 
     if (result.isNotEmpty && result.first['total'] != null) {
-      return result.first['total'] as int;
+      return (result.first['total'] as num).toInt();
     }
     return 0;
   }
@@ -265,9 +271,8 @@ class DatabaseService {
     SELECT 
       COUNT(*) as totalSales,
       SUM(sales.quantity) as totalQuantity,
-      SUM(sales.quantity * items.base_price_cents) as totalAmount
+      SUM(sales.quantity * sales.unit_price * 100) as totalAmount
     FROM sales
-    JOIN items ON sales.item_id = items.id
     WHERE sales.date BETWEEN ? AND ?
   ''', [startDate, endDate]);
 
@@ -275,10 +280,9 @@ class DatabaseService {
     SELECT 
       companies.name,
       companies.id,
-      SUM(sales.quantity * items.base_price_cents) as total,
+      SUM(sales.quantity * sales.unit_price * 100) as total,
       SUM(sales.quantity) as quantity
     FROM sales
-    JOIN items ON sales.item_id = items.id
     JOIN companies ON sales.company_id = companies.id
     WHERE sales.date BETWEEN ? AND ?
     GROUP BY companies.id
@@ -290,20 +294,18 @@ class DatabaseService {
       items.name,
       items.color,
       SUM(sales.quantity) as quantity,
-      SUM(sales.quantity * items.base_price_cents) as total
+      SUM(sales.quantity * sales.unit_price * 100) as total
     FROM sales
-    JOIN items ON sales.item_id = items.id
     WHERE sales.date BETWEEN ? AND ?
-    GROUP BY items.id
+    GROUP BY sales.item_id
     ORDER BY total DESC
   ''', [startDate, endDate]);
 
     final dailySales = await db.rawQuery('''
     SELECT 
       sales.date,
-      SUM(sales.quantity * items.base_price_cents) as total
+      SUM(sales.quantity * sales.unit_price * 100) as total
     FROM sales
-    JOIN items ON sales.item_id = items.id
     WHERE sales.date BETWEEN ? AND ?
     GROUP BY sales.date
     ORDER BY sales.date ASC

@@ -35,7 +35,17 @@ class CompanyList extends StatelessWidget {
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final company = companies[index];
+        final companyColor = Color(int.parse('0xFF${company.color.substring(1)}'));
+
         return ListTile(
+          leading: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: companyColor,
+              shape: BoxShape.circle,
+            ),
+          ),
           title: Text(
             company.name,
             style: const TextStyle(

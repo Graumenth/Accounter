@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../models/company.dart';
 import '../../models/company_item_price.dart';
 import '../../services/database_service.dart';
@@ -53,11 +52,11 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
             Text(
               'Varsayılan Fiyat: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
               style: const TextStyle(
-                color: AppColors.textSecondary,
+                color: Color(0xFF4A5568),
                 fontSize: 14,
               ),
             ),
-            SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 16),
             TextField(
               controller: controller,
               decoration: const InputDecoration(
@@ -125,18 +124,18 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.company.name,
           style: const TextStyle(
-            color: AppColors.textPrimary,
+            color: Color(0xFF1A202C),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -149,11 +148,11 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[300]),
-            SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 16),
             const Text(
               'Henüz ürün yok',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: Color(0xFF4A5568),
                 fontSize: 16,
               ),
             ),
@@ -161,9 +160,9 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         ),
       )
           : ListView.separated(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(16),
         itemCount: itemsWithPrices.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final item = itemsWithPrices[index];
           final hasCustomPrice = item['custom_price_cents'] != null;
@@ -173,10 +172,9 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           final itemColor = Color(int.parse('0xFF${item['color'].toString().substring(1)}'));
 
           return Container(
-            margin: EdgeInsets.only(bottom: AppSpacing.sm),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: AppRadius.lgRadius,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
               leading: Container(
@@ -197,12 +195,12 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 4),
                   if (hasCustomPrice)
                     Text(
                       'Varsayılan: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
                       style: const TextStyle(
-                        color: AppColors.textSecondary,
+                        color: Color(0xFF4A5568),
                         fontSize: 12,
                         decoration: TextDecoration.lineThrough,
                       ),
@@ -210,7 +208,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                   Text(
                     '${displayPrice.toStringAsFixed(2)} ₺',
                     style: TextStyle(
-                      color: hasCustomPrice ? AppColors.primary : AppColors.textSecondary,
+                      color: hasCustomPrice ? const Color(0xFF38A169) : const Color(0xFF4A5568),
                       fontWeight: hasCustomPrice ? FontWeight.w600 : FontWeight.normal,
                       fontSize: hasCustomPrice ? 16 : 14,
                     ),
@@ -223,24 +221,24 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                   if (hasCustomPrice)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: AppRadius.smRadius,
+                        color: const Color(0xFF38A169).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
                         'Özel',
                         style: TextStyle(
-                          color: AppColors.primary,
+                          color: Color(0xFF38A169),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                  SizedBox(width: AppSpacing.sm),
-                  const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
                 ],
               ),
               onTap: () => showPriceDialog(item),

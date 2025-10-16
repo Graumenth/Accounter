@@ -16,6 +16,7 @@ class DailyTotalBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const double barHeight = 112.0;
+
     return Container(
       height: barHeight,
       padding: const EdgeInsets.symmetric(

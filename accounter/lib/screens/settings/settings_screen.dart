@@ -69,43 +69,54 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Future<void> handleAddCompany() async {
-    final name = await showCompanyDialog(context);
-    if (name != null && name.isNotEmpty) {
-      await DatabaseService.instance.insertCompany(Company(name: name));
+    final result = await showCompanyDialog(context);
+    if (result != null && result is Map<String, dynamic> && result['name'] != null) {
+      await DatabaseService.instance.insertCompany(
+        Company(
+          name: result['name'],
+          color: result['color'] ?? '#2563EB',
+        ),
+      );
       loadData();
     }
   }
 
   Future<void> handleEditCompany(Company company) async {
     final result = await showCompanyDialog(context, company: company);
-    if (result == 'delete') {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Şirketi Sil'),
-          content: Text('${company.name} şirketini silmek istediğinize emin misiniz?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Sil'),
-            ),
-          ],
-        ),
-      );
-      if (confirm == true) {
-        await DatabaseService.instance.deleteCompany(company.id!);
+    if (result != null && result is Map<String, dynamic>) {
+      if (result['action'] == 'delete') {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Şirketi Sil'),
+            content: Text('${company.name} şirketini silmek istediğinize emin misiniz?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('İptal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Sil'),
+              ),
+            ],
+          ),
+        );
+        if (confirm == true) {
+          await DatabaseService.instance.deleteCompany(company.id!);
+          loadData();
+        }
+      } else if (result['name'] != null) {
+        await DatabaseService.instance.updateCompany(
+          Company(
+            id: company.id,
+            name: result['name'],
+            color: result['color'] ?? company.color,
+          ),
+        );
         loadData();
       }
-    } else if (result != null && result.isNotEmpty) {
-      await DatabaseService.instance.updateCompany(
-        Company(id: company.id, name: result),
-      );
-      loadData();
     }
   }
 
