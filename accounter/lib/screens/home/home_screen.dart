@@ -122,6 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final customPrice = await DatabaseService.instance.getCompanyItemPrice(companyId, item.id!);
     final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
 
+    print('DEBUG: Item: ${item.name}, Company: $companyId, Custom Price: $customPrice, Unit Price: $unitPrice');
+
     final sale = Sale(
       itemId: item.id!,
       date: Sale.dateToString(selectedDate),
