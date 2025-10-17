@@ -76,6 +76,8 @@
   "alreadyAdded": "This item is already added for today",
   "darkMode": "Dark Mode",
   "language": "Language",
-  "turkish": "Turkish",
-  "english": "English"
+  "newCompany": "New Company",
+  "editCompany": "Edit Company",
+  "newItem": "New Item",
+  "editItem": "Edit Item"
 }

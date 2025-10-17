@@ -7,7 +7,6 @@ import '/l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../models/company.dart';
 import '../../models/item.dart';
-import '../../main.dart';
 import 'widgets/company_list.dart';
 import 'widgets/item_list.dart';
 import 'widgets/company_dialog.dart';
@@ -79,6 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       colorLabel: l10n.color,
       cancelLabel: l10n.cancel,
       saveLabel: l10n.save,
+      newCompanyLabel: l10n.newCompany,
+      editCompanyLabel: l10n.editCompany,
     );
     if (result != null && result is Map<String, dynamic> && result['name'] != null) {
       await DatabaseService.instance.insertCompany(
@@ -101,6 +102,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       cancelLabel: l10n.cancel,
       saveLabel: l10n.save,
       deleteLabel: l10n.delete,
+      newCompanyLabel: l10n.newCompany,
+      editCompanyLabel: l10n.editCompany,
     );
 
     if (!mounted) return;
@@ -152,6 +155,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       colorLabel: l10n.color,
       cancelLabel: l10n.cancel,
       saveLabel: l10n.save,
+      newItemLabel: l10n.newItem,
+      editItemLabel: l10n.editItem,
     );
     if (result != null && result is Map<String, dynamic> && result['name'] != null) {
       await DatabaseService.instance.insertItem(
@@ -176,6 +181,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       cancelLabel: l10n.cancel,
       saveLabel: l10n.save,
       deleteLabel: l10n.delete,
+      newItemLabel: l10n.newItem,
+      editItemLabel: l10n.editItem,
     );
 
     if (!mounted) return;
@@ -292,10 +299,12 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           CompanyList(
             companies: companies,
             onEdit: (company) => handleEditCompany(company, context),
+            onRefresh: loadData,
           ),
           ItemList(
             items: items,
             onEdit: (item) => handleEditItem(item, context),
+            onRefresh: loadData,
           ),
         ],
       ),

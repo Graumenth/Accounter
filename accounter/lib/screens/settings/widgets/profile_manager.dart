@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../../../main.dart';
+import '../../../constants/app_colors.dart';
 
 class ProfileManager {
   static const String _keyCompanyName = 'company_name';
@@ -76,12 +77,19 @@ Future<String?> showProfileDialog(
   final prefs = await SharedPreferences.getInstance();
   bool isDarkMode = prefs.getBool('theme_mode') ?? false;
   String currentLocale = prefs.getString('locale') ?? 'tr';
+  final isDark = Theme.of(context).brightness == Brightness.dark;
 
   return await showDialog<String>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(companyInfoLabel),
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+        title: Text(
+          companyInfoLabel,
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -95,16 +103,20 @@ Future<String?> showProfileDialog(
                   helperText: usedInPdfReportsLabel,
                 ),
                 autofocus: true,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                companyLogoLabel,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                companyLogoLabel,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               GestureDetector(
                 onTap: () async {
                   final newLogoPath = await ProfileManager.pickAndSaveLogo();
@@ -118,13 +130,15 @@ Future<String?> showProfileDialog(
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[400]!),
+                    color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant,
+                    borderRadius: AppRadius.lgRadius,
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
+                    ),
                   ),
                   child: logoPath != null && File(logoPath!).existsSync()
                       ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.lgRadius,
                     child: Image.file(
                       File(logoPath!),
                       fit: BoxFit.cover,
@@ -133,11 +147,17 @@ Future<String?> showProfileDialog(
                       : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey[600]),
-                      const SizedBox(height: 8),
+                      Icon(
+                        Icons.add_photo_alternate,
+                        size: 40,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         addLogoLabel,
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -151,20 +171,29 @@ Future<String?> showProfileDialog(
                       logoPath = null;
                     });
                   },
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  label: Text(removeLogoLabel, style: const TextStyle(color: Colors.red)),
+                  icon: Icon(
+                    Icons.delete,
+                    color: isDark ? AppColors.darkError : AppColors.error,
+                  ),
+                  label: Text(
+                    removeLogoLabel,
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkError : AppColors.error,
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
+              Divider(color: isDark ? AppColors.darkDivider : AppColors.divider),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     darkModeLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                   ),
                   Switch(
@@ -175,18 +204,20 @@ Future<String?> showProfileDialog(
                       });
                       MyApp.of(context)?.toggleTheme(value);
                     },
+                    activeColor: isDark ? AppColors.darkPrimary : AppColors.primary,
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 languageLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
                   Expanded(
@@ -199,18 +230,21 @@ Future<String?> showProfileDialog(
                       },
                       style: OutlinedButton.styleFrom(
                         backgroundColor: currentLocale == 'tr'
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            ? (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1)
                             : null,
+                        foregroundColor: currentLocale == 'tr'
+                            ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+                            : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                         side: BorderSide(
                           color: currentLocale == 'tr'
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey,
+                              ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+                              : (isDark ? AppColors.darkBorder : AppColors.border),
                         ),
                       ),
                       child: const Text('Türkçe'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
@@ -221,12 +255,15 @@ Future<String?> showProfileDialog(
                       },
                       style: OutlinedButton.styleFrom(
                         backgroundColor: currentLocale == 'en'
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            ? (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1)
                             : null,
+                        foregroundColor: currentLocale == 'en'
+                            ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+                            : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                         side: BorderSide(
                           color: currentLocale == 'en'
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.grey,
+                              ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+                              : (isDark ? AppColors.darkBorder : AppColors.border),
                         ),
                       ),
                       child: const Text('English'),
@@ -240,7 +277,12 @@ Future<String?> showProfileDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(cancelLabel),
+            child: Text(
+              cancelLabel,
+              style: TextStyle(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -248,6 +290,10 @@ Future<String?> showProfileDialog(
               if (name.isEmpty) return;
               Navigator.pop(context, name);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDark ? AppColors.darkPrimary : AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
             child: Text(saveLabel),
           ),
         ],

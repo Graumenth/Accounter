@@ -76,6 +76,8 @@
   "alreadyAdded": "Bu kayıt bugün için zaten mevcut",
   "darkMode": "Karanlık Mod",
   "language": "Dil",
-  "turkish": "Türkçe",
-  "english": "İngilizce"
+  "newCompany": "Yeni Şirket",
+  "editCompany": "Şirketi Düzenle",
+  "newItem": "Yeni Ürün",
+  "editItem": "Ürünü Düzenle"
 }
