@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../l10n/app_localizations.dart';
+import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
 
 class SummaryCards extends StatelessWidget {
   final Map<String, dynamic> total;
@@ -12,7 +13,6 @@ class SummaryCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final totalAmount = (total['totalAmount'] ?? 0) as int;
     final totalQuantity = (total['totalQuantity'] ?? 0) as int;
     final totalSales = (total['totalSales'] ?? 0) as int;
@@ -24,42 +24,42 @@ class SummaryCards extends StatelessWidget {
             Expanded(
               child: _buildSummaryCard(
                 context,
-                '💰 ${l10n.total}',
+                l10n.total,
                 '${(totalAmount / 100).toStringAsFixed(2)} ₺',
-                Colors.green,
+                const Color(0xFF10B981),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _buildSummaryCard(
                 context,
-                '📦 ${l10n.quantity}',
+                l10n.quantity,
                 '$totalQuantity',
-                Colors.blue,
+                const Color(0xFF3B82F6),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Row(
           children: [
             Expanded(
               child: _buildSummaryCard(
                 context,
-                '🧾 ${l10n.sales}',
+                l10n.sales,
                 '$totalSales',
-                Colors.orange,
+                const Color(0xFFF97316),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _buildSummaryCard(
                 context,
-                '📊 ${l10n.average}',
+                l10n.average,
                 totalSales > 0
                     ? '${(totalAmount / totalSales / 100).toStringAsFixed(2)} ₺'
                     : '0 ₺',
-                Colors.purple,
+                const Color(0xFFA855F7),
               ),
             ),
           ],
@@ -69,16 +69,16 @@ class SummaryCards extends StatelessWidget {
   }
 
   Widget _buildSummaryCard(BuildContext context, String title, String value, Color color) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
+        borderRadius: AppRadius.lgRadius,
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -91,10 +91,10 @@ class SummaryCards extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 14,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
             style: TextStyle(

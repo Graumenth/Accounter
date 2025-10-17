@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
 
 class PeriodSelector extends StatelessWidget {
   final String selectedPeriod;
@@ -14,51 +15,61 @@ class PeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Row(
+      color: isDark ? AppColors.darkSurface : AppColors.surface,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
         children: [
-          _buildButton(l10n.today, 'today'),
-          const SizedBox(width: 8),
-          _buildButton(l10n.thisWeek, 'week'),
-          const SizedBox(width: 8),
-          _buildButton(l10n.thisMonth, 'month'),
-          const SizedBox(width: 8),
-          _buildButton(l10n.thisYear, 'year'),
-          const SizedBox(width: 8),
-          _buildButton(l10n.selectDate, 'custom'),
+          Row(
+            children: [
+              _buildPeriodButton(context, l10n.today, 'today'),
+              const SizedBox(width: AppSpacing.sm),
+              _buildPeriodButton(context, l10n.thisWeek, 'week'),
+              const SizedBox(width: AppSpacing.sm),
+              _buildPeriodButton(context, l10n.thisMonth, 'month'),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              _buildPeriodButton(context, l10n.thisYear, 'year'),
+              const SizedBox(width: AppSpacing.sm),
+              _buildPeriodButton(context, l10n.selectDate, 'custom', icon: Icons.calendar_today),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildButton(String label, String period) {
+  Widget _buildPeriodButton(BuildContext context, String label, String period, {IconData? icon}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = selectedPeriod == period;
+
     return Expanded(
-      child: GestureDetector(
-        onTap: () => onPeriodChanged(period),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF38A169) : const Color(0xFFF7FAFC),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF38A169) : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF4A5568),
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
+      child: ElevatedButton.icon(
+        onPressed: () => onPeriodChanged(period),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected
+              ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+              : (isDark ? AppColors.darkSurface : AppColors.surface),
+          foregroundColor: isSelected
+              ? AppColors.surface
+              : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.mdRadius,
+            side: BorderSide(
+              color: isSelected
+                  ? (isDark ? AppColors.darkPrimary : AppColors.primary)
+                  : (isDark ? AppColors.darkBorder : AppColors.border),
             ),
           ),
         ),
+        icon: icon != null ? Icon(icon, size: 18) : const SizedBox.shrink(),
+        label: Text(label, style: const TextStyle(fontSize: 13)),
       ),
     );
   }

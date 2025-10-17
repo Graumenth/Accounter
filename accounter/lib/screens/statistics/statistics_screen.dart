@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../models/sale.dart';
+import '../../constants/app_colors.dart';
 import 'widgets/period_selector.dart';
 import 'widgets/summary_cards.dart';
 import 'widgets/company_stats.dart';
@@ -59,19 +60,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _showCustomDatePicker() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       initialDateRange: DateTimeRange(start: startDate, end: endDate),
-      locale: const Locale('tr', 'TR'),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF38A169),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF1A202C),
+            colorScheme: ColorScheme.light(
+              primary: isDark ? AppColors.darkPrimary : AppColors.primary,
+              onPrimary: AppColors.surface,
+              onSurface: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -110,20 +112,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFC),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.statistics,
-          style: const TextStyle(
-            color: Color(0xFF1A202C),
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -136,67 +144,80 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+              child: CircularProgressIndicator(
+                color: isDark ? AppColors.darkPrimary : AppColors.primary,
+              ),
+            )
                 : statistics == null
-                ? Center(child: Text(l10n.noData))
-                : _buildStatisticsContent(l10n),
+                ? Center(
+              child: Text(
+                l10n.noData,
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
+              ),
+            )
+                : _buildStatisticsContent(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsContent(AppLocalizations l10n) {
+  Widget _buildStatisticsContent() {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final total = statistics!['total'] as Map<String, dynamic>;
     final companies = statistics!['companies'] as List<Map<String, dynamic>>;
     final items = statistics!['items'] as List<Map<String, dynamic>>;
     final daily = statistics!['daily'] as List<Map<String, dynamic>>;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         SummaryCards(total: total),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xl),
         if (companies.isNotEmpty) ...[
-          const Text(
-            '🏢 Şirketlere Göre Satışlar',
-            style: TextStyle(
+          Text(
+            l10n.companySales,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           CompanyStats(
             companies: companies,
             startDate: startDate,
             endDate: endDate,
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xl),
         if (items.isNotEmpty) ...[
-          const Text(
-            '🎯 Ürünlere Göre Satışlar',
-            style: TextStyle(
+          Text(
+            l10n.productSales,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           ItemStats(items: items),
         ],
-        const SizedBox(height: 24),
-        if (daily.isNotEmpty && selectedPeriod != 'today') ...[
-          const Text(
-            '📈 Günlük Dağılım',
-            style: TextStyle(
+        const SizedBox(height: AppSpacing.xl),
+        if (daily.isNotEmpty) ...[
+          Text(
+            l10n.dailyDistribution,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           DailyChart(daily: daily),
         ],
         const SizedBox(height: 80),

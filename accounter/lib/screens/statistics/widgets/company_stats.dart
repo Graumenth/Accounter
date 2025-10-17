@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
+import '../../../models/sale.dart';
 
 class CompanyStats extends StatelessWidget {
   final List<Map<String, dynamic>> companies;
@@ -14,91 +17,76 @@ class CompanyStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: companies.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final company = companies[index];
-          final id = company['id'] as int;
-          final name = company['name'] as String;
-          final quantity = company['total_quantity'] as int;
-          final revenue = company['total_revenue'] as int;
+    return Column(
+      children: companies.map((company) => _buildCompanyItem(context, company)).toList(),
+    );
+  }
 
-          return ListTile(
-            leading: const Icon(
-              Icons.business,
-              color: Color(0xFF38A169),
-            ),
-            title: Text(
-              name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1A202C),
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
+  Widget _buildCompanyItem(BuildContext context, Map<String, dynamic> company) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final total = (company['total'] as int) / 100;
+    final quantity = company['quantity'] as int;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/company-report',
+          arguments: {
+            'companyId': company['id'],
+            'companyName': company['name'],
+            'startDate': Sale.dateToString(startDate),
+            'endDate': Sale.dateToString(endDate),
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          borderRadius: AppRadius.lgRadius,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                  Text(
+                    company['name'],
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF38A169).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '$quantity adet',
-                      style: const TextStyle(
-                        color: Color(0xFF38A169),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '$quantity ${l10n.quantitySuffix}',
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+            Row(
               children: [
                 Text(
-                  '${(revenue / 100).toStringAsFixed(2)} ₺',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A202C),
+                  '${total.toStringAsFixed(2)} ₺',
+                  style: AppTextStyles.price.copyWith(
+                    color: isDark ? AppColors.darkPrimary : AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Color(0xFF9CA3AF),
+                const SizedBox(width: AppSpacing.sm),
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ],
             ),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/company-report',
-                arguments: {
-                  'companyId': id,
-                  'companyName': name,
-                  'startDate': startDate,
-                  'endDate': endDate,
-                },
-              );
-            },
-          );
-        },
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
 
 class ItemStats extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -10,74 +12,63 @@ class ItemStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          final name = item['name'] as String;
-          final quantity = item['total_quantity'] as int;
-          final revenue = item['total_revenue'] as int;
-          final itemColor = Color(
-            int.parse('0xFF${(item['color'] as String).substring(1)}'),
-          );
+    return Column(
+      children: items.map((item) => _buildItemStat(context, item)).toList(),
+    );
+  }
 
-          return ListTile(
-            leading: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: itemColor,
-                shape: BoxShape.circle,
-              ),
+  Widget _buildItemStat(BuildContext context, Map<String, dynamic> item) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final total = (item['total'] as int) / 100;
+    final quantity = item['quantity'] as int;
+    final color = Color(int.parse('0xFF${item['color'].toString().substring(1)}'));
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
+        borderRadius: AppRadius.lgRadius,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            title: Text(
-              name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1A202C),
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF38A169).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '$quantity adet',
-                      style: const TextStyle(
-                        color: Color(0xFF38A169),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['name'],
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '$quantity ${l10n.quantitySuffix}',
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-            trailing: Text(
-              '${(revenue / 100).toStringAsFixed(2)} ₺',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A202C),
-              ),
+          ),
+          Text(
+            '${total.toStringAsFixed(2)} ₺',
+            style: AppTextStyles.price.copyWith(
+              color: isDark ? AppColors.darkPrimary : AppColors.primary,
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
