@@ -90,6 +90,12 @@ class _DateSelectorState extends State<DateSelector> {
     return DateFormat('dd MMM', 'tr_TR').format(date);
   }
 
+  bool isSpecialDay(DateTime date) {
+    return isSameDay(date, todayMidnight) ||
+        isSameDay(date, todayMidnight.subtract(const Duration(days: 1))) ||
+        isSameDay(date, todayMidnight.add(const Duration(days: 1)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -159,6 +165,7 @@ class _DateSelectorState extends State<DateSelector> {
                         itemBuilder: (context, index) {
                           final dayOffset = index - 500;
                           final date = todayMidnight.add(Duration(days: dayOffset));
+                          final isSpecial = isSpecialDay(date);
 
                           return AnimatedBuilder(
                             animation: _pageController,
@@ -188,7 +195,33 @@ class _DateSelectorState extends State<DateSelector> {
                                         child: Container(
                                           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                                           alignment: Alignment.center,
-                                          child: Text(
+                                          child: isSpecial
+                                              ? Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                getDateLabel(date),
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: isCenter ? FontWeight.w600 : FontWeight.w400,
+                                                  color: isCenter
+                                                      ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)
+                                                      : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                DateFormat('dd MMM', 'tr_TR').format(date),
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w300,
+                                                  color: (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
+                                                      .withValues(alpha: 0.5),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                              : Text(
                                             getDateLabel(date),
                                             style: TextStyle(
                                               fontSize: 14,

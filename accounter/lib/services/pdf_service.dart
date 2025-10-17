@@ -52,8 +52,7 @@ class PdfService {
     final logoPath = await ProfileManager.getCompanyLogo();
     final now = DateTime.now();
     final shareDate = DateFormat('dd_MM_yyyy').format(now);
-    final priceTag = includePrices ? '' : '_${translations['withoutPrices']}';
-    final fileName = '${myCompanyName}_${companyName}_${shareDate}$priceTag.pdf'
+    final fileName = '${myCompanyName}_${companyName}_${shareDate}.pdf'
         .replaceAll(' ', '_')
         .replaceAll('ı', 'i')
         .replaceAll('İ', 'I')
@@ -244,7 +243,7 @@ class PdfService {
                 color: isEven ? PdfColors.white : PdfColors.grey50,
               ),
               children: [
-                _buildPdfCell(ttf, DateFormat('dd.MM').format(DateTime.parse(date))),
+                _buildPdfCell(ttf, DateFormat('dd.MM.yyyy').format(DateTime.parse(date))),
                 ...items.map((item) {
                   final quantity = salesMap[date]?[item['id'] as int] ?? 0;
                   return _buildPdfCell(
