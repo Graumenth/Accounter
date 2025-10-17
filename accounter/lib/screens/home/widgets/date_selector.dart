@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '/l10n/app_localizations.dart';
 
 class DateSelector extends StatefulWidget {
   final DateTime selectedDate;
   final Function(int) onDateChanged;
-  final String todayLabel;
-  final String yesterdayLabel;
-  final String tomorrowLabel;
 
   const DateSelector({
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
-    required this.todayLabel,
-    required this.yesterdayLabel,
-    required this.tomorrowLabel,
   });
 
   @override
@@ -57,13 +52,15 @@ class _DateSelectorState extends State<DateSelector> {
         date1.day == date2.day;
   }
 
-  String getDateLabel(DateTime date) {
+  String getDateLabel(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (isSameDay(date, todayMidnight)) {
-      return widget.todayLabel;
+      return l10n.today;
     } else if (isSameDay(date, todayMidnight.subtract(const Duration(days: 1)))) {
-      return widget.yesterdayLabel;
+      return l10n.yesterday;
     } else if (isSameDay(date, todayMidnight.add(const Duration(days: 1)))) {
-      return widget.tomorrowLabel;
+      return l10n.tomorrow;
     }
     return DateFormat('dd MMM', 'tr_TR').format(date);
   }
@@ -109,7 +106,7 @@ class _DateSelectorState extends State<DateSelector> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            getDateLabel(date),
+                            getDateLabel(context, date),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

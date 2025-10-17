@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 import '../../../models/company.dart';
 
 class CategoryTabs extends StatelessWidget {
   final List<Company> companies;
   final int? selectedCompanyId;
   final Function(int?) onCompanySelected;
-  final String allLabel;
 
   const CategoryTabs({
     super.key,
     required this.companies,
     required this.selectedCompanyId,
     required this.onCompanySelected,
-    required this.allLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         Container(
@@ -25,7 +26,7 @@ class CategoryTabs extends StatelessWidget {
           child: companies.isEmpty
               ? Center(
             child: Text(
-              allLabel,
+              l10n.all,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -37,7 +38,7 @@ class CategoryTabs extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             children: [
-              _buildTab(allLabel, null, const Color(0xFF38A169)),
+              _buildTab(l10n.all, null, const Color(0xFF38A169)),
               ...companies.map((company) {
                 final companyColor = Color(int.parse(company.color.replaceFirst('#', '0xFF')));
                 return _buildTab(company.name, company.id, companyColor);

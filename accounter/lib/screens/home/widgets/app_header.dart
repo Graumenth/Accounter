@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 
 class AppHeader extends StatelessWidget {
-  final String title;
-  final String statisticsTooltip;
-  final String settingsTooltip;
   final VoidCallback onSettingsChanged;
 
   const AppHeader({
     super.key,
-    required this.title,
-    required this.statisticsTooltip,
-    required this.settingsTooltip,
     required this.onSettingsChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
@@ -28,7 +25,7 @@ class AppHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            title,
+            l10n.accounter,
             style: const TextStyle(
               color: Color(0xFF1A202C),
               fontWeight: FontWeight.w600,
@@ -39,12 +36,12 @@ class AppHeader extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.bar_chart, color: Color(0xFF4A5568)),
-                tooltip: statisticsTooltip,
+                tooltip: l10n.statistics,
                 onPressed: () => Navigator.pushNamed(context, '/statistics'),
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Color(0xFF4A5568)),
-                tooltip: settingsTooltip,
+                tooltip: l10n.settings,
                 onPressed: () async {
                   await Navigator.pushNamed(context, '/settings');
                   onSettingsChanged();

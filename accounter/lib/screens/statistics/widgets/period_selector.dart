@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 
 class PeriodSelector extends StatelessWidget {
   final String selectedPeriod;
   final Function(String) onPeriodChanged;
-  final String todayLabel;
-  final String thisWeekLabel;
-  final String thisMonthLabel;
-  final String thisYearLabel;
-  final String selectDateLabel;
 
   const PeriodSelector({
     super.key,
     required this.selectedPeriod,
     required this.onPeriodChanged,
-    required this.todayLabel,
-    required this.thisWeekLabel,
-    required this.thisMonthLabel,
-    required this.thisYearLabel,
-    required this.selectDateLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(16),
@@ -29,19 +22,19 @@ class PeriodSelector extends StatelessWidget {
         children: [
           Row(
             children: [
-              _buildPeriodButton(todayLabel, 'today'),
+              _buildPeriodButton(l10n.today, 'today'),
               const SizedBox(width: 8),
-              _buildPeriodButton(thisWeekLabel, 'week'),
+              _buildPeriodButton(l10n.thisWeek, 'week'),
               const SizedBox(width: 8),
-              _buildPeriodButton(thisMonthLabel, 'month'),
+              _buildPeriodButton(l10n.thisMonth, 'month'),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildPeriodButton(thisYearLabel, 'year'),
+              _buildPeriodButton(l10n.thisYear, 'year'),
               const SizedBox(width: 8),
-              _buildPeriodButton(selectDateLabel, 'custom', icon: Icons.calendar_today),
+              _buildPeriodButton(l10n.selectDate, 'custom', icon: Icons.calendar_today),
             ],
           ),
         ],
