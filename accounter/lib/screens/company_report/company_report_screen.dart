@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 import '../../../services/database_service.dart';
 import '../../../services/pdf_service.dart';
 import '../../../models/sale.dart';
@@ -60,8 +61,12 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
   }
 
   void _showShareMenu() {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadius.lg),
@@ -77,7 +82,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: isDark ? AppColors.darkBorder : AppColors.border,
                   borderRadius: AppRadius.smRadius,
                 ),
               ),
@@ -85,8 +90,10 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Text(
-                  'Rapor Paylaş',
-                  style: AppTextStyles.heading3,
+                  l10n.share,
+                  style: AppTextStyles.heading3.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -94,36 +101,59 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1),
                     borderRadius: AppRadius.mdRadius,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.attach_money,
-                    color: AppColors.primary,
+                    color: isDark ? AppColors.darkPrimary : AppColors.primary,
                   ),
                 ),
-                title: const Text('Fiyatlarla Birlikte'),
-                subtitle: const Text('Birim ve toplam fiyatlar dahil'),
+                title: Text(
+                  l10n.withPrices,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.usedInPdfReports,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _exportPdf(includePrices: true);
                 },
               ),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                color: isDark ? AppColors.darkDivider : AppColors.divider,
+              ),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withOpacity(0.1),
+                    color: (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary).withValues(alpha: 0.1),
                     borderRadius: AppRadius.mdRadius,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.numbers,
-                    color: AppColors.textSecondary,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
-                title: const Text('Sadece Miktarlar'),
-                subtitle: const Text('Fiyat bilgileri olmadan'),
+                title: Text(
+                  l10n.withoutPrices,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.withoutPrices,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _exportPdf(includePrices: false);
@@ -140,6 +170,7 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
   Future<void> _exportPdf({required bool includePrices}) async {
     if (reportData == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
     final items = reportData!['items'] as List<Map<String, dynamic>>;
     final dailySales = reportData!['dailySales'] as List<Map<String, dynamic>>;
 
@@ -150,29 +181,50 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
       items: items,
       dailySales: dailySales,
       includePrices: includePrices,
+      locale: Localizations.localeOf(context).languageCode,
+      translations: {
+        'report': l10n.report,
+        'date': l10n.date,
+        'total': l10n.total,
+        'unitPrice': l10n.unitPrice,
+        'totalPrice': l10n.totalPrice,
+        'grandTotal': l10n.grandTotal,
+        'selectCompany': l10n.selectCompany,
+        'withoutPrices': l10n.withoutPrices,
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.companyName,
-          style: AppTextStyles.heading2,
+          style: AppTextStyles.heading2.copyWith(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
         ),
       ),
       body: isLoading
-          ? const Center(
+          ? Center(
         child: CircularProgressIndicator(
-          color: AppColors.primary,
+          color: isDark ? AppColors.darkPrimary : AppColors.primary,
         ),
       )
           : reportData == null
@@ -183,13 +235,13 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
             Icon(
               Icons.description_outlined,
               size: 64,
-              color: AppColors.textDisabled,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Veri yok',
+              l10n.noData,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -200,14 +252,17 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
           ? null
           : FloatingActionButton.extended(
         onPressed: _showShareMenu,
-        backgroundColor: AppColors.primary,
+        backgroundColor: isDark ? AppColors.darkPrimary : AppColors.primary,
+        foregroundColor: AppColors.surface,
         icon: const Icon(Icons.share),
-        label: const Text('Paylaş'),
+        label: Text(l10n.share),
       ),
     );
   }
 
   Widget _buildReport() {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = reportData!['items'] as List<Map<String, dynamic>>;
     final dailySales = reportData!['dailySales'] as List<Map<String, dynamic>>;
 
@@ -219,13 +274,13 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
             Icon(
               Icons.inventory_outlined,
               size: 64,
-              color: AppColors.textDisabled,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Bu şirket için satış yok',
+              l10n.noSales,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
           ],
@@ -279,8 +334,10 @@ class _CompanyReportScreenState extends State<CompanyReportScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Detaylı Tablo',
-              style: AppTextStyles.heading3,
+              l10n.report,
+              style: AppTextStyles.heading3.copyWith(
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             SingleChildScrollView(

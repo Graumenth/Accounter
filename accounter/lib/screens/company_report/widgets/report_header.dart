@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '/l10n/app_localizations.dart';
+import '../../../../constants/app_colors.dart';
 
 class ReportHeader extends StatelessWidget {
   final String companyName;
@@ -15,68 +17,69 @@ class ReportHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateFormat = DateFormat('dd.MM.yyyy');
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: theme.colorScheme.surface,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
+        borderRadius: AppRadius.lgRadius,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             companyName,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+            style: AppTextStyles.heading2.copyWith(
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Başlangıç',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    l10n.startDate,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     dateFormat.format(startDate),
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.arrow_forward, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Icon(
+                  Icons.arrow_forward,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bitiş',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    l10n.endDate,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     dateFormat.format(endDate),
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],

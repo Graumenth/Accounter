@@ -16,6 +16,8 @@ class PdfService {
     required List<Map<String, dynamic>> items,
     required List<Map<String, dynamic>> dailySales,
     required bool includePrices,
+    required String locale,
+    required Map<String, String> translations,
   }) async {
     final pdf = pw.Document();
     final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
@@ -50,7 +52,7 @@ class PdfService {
     final logoPath = await ProfileManager.getCompanyLogo();
     final now = DateTime.now();
     final shareDate = DateFormat('dd_MM_yyyy').format(now);
-    final priceTag = includePrices ? '' : '_fiyatsiz';
+    final priceTag = includePrices ? '' : '_${translations['withoutPrices']}';
     final fileName = '${myCompanyName}_${companyName}_${shareDate}$priceTag.pdf'
         .replaceAll(' ', '_')
         .replaceAll('ı', 'i')
@@ -82,6 +84,7 @@ class PdfService {
       salesMap: salesMap,
       itemTotals: itemTotals,
       includePrices: includePrices,
+      translations: translations,
     );
 
     pdf.addPage(
@@ -98,6 +101,7 @@ class PdfService {
               startDate: startDate,
               endDate: endDate,
               logo: logo,
+              translations: translations,
             ),
             pw.SizedBox(height: 8),
             pw.Expanded(child: table),
@@ -107,9 +111,10 @@ class PdfService {
               items: items,
               itemTotals: itemTotals,
               includePrices: includePrices,
+              translations: translations,
             ),
             pw.SizedBox(height: 8),
-            _buildPdfFooter(ttf: ttf, now: now),
+            _buildPdfFooter(ttf: ttf, now: now, translations: translations),
           ],
         ),
       ),
@@ -121,8 +126,8 @@ class PdfService {
 
     final params = ShareParams(
       files: [XFile(file.path)],
-      subject: '$companyName Satış Raporu',
-      text: 'Satış raporu ektedir.',
+      subject: '${companyName} ${translations['report']}',
+      text: translations['report'] ?? 'Report',
     );
     await SharePlus.instance.share(params);
   }
@@ -134,6 +139,7 @@ class PdfService {
     required DateTime startDate,
     required DateTime endDate,
     pw.ImageProvider? logo,
+    required Map<String, String> translations,
   }) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
@@ -161,7 +167,7 @@ class PdfService {
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Müşteri: $companyName',
+                  '${translations['selectCompany']}: $companyName',
                   style: pw.TextStyle(
                     font: ttf,
                     fontSize: 8,
@@ -175,7 +181,7 @@ class PdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
-                'SATIŞ RAPORU',
+                translations['report']?.toUpperCase() ?? 'REPORT',
                 style: pw.TextStyle(
                   font: ttf,
                   fontSize: 10,
@@ -206,6 +212,7 @@ class PdfService {
     required Map<String, Map<int, int>> salesMap,
     required Map<int, int> itemTotals,
     required bool includePrices,
+    required Map<String, String> translations,
   }) {
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -224,7 +231,7 @@ class PdfService {
           pw.TableRow(
             decoration: const pw.BoxDecoration(color: PdfColors.grey800),
             children: [
-              _buildPdfCell(ttf, 'Tarih', isHeader: true),
+              _buildPdfCell(ttf, translations['date'] ?? 'Date', isHeader: true),
               ...items.map((item) => _buildPdfCell(ttf, item['name'].toString(), isHeader: true)),
             ],
           ),
@@ -252,7 +259,7 @@ class PdfService {
           pw.TableRow(
             decoration: const pw.BoxDecoration(color: PdfColors.grey200),
             children: [
-              _buildPdfCell(ttf, 'TOPLAM', isBold: true),
+              _buildPdfCell(ttf, translations['total']?.toUpperCase() ?? 'TOTAL', isBold: true),
               ...items.map((item) {
                 final total = itemTotals[item['id'] as int] ?? 0;
                 return _buildPdfCell(ttf, total.toString(), isBold: true);
@@ -263,7 +270,7 @@ class PdfService {
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: PdfColors.white),
               children: [
-                _buildPdfCell(ttf, 'BİRİM FİYAT', isBold: true),
+                _buildPdfCell(ttf, translations['unitPrice']?.toUpperCase() ?? 'UNIT PRICE', isBold: true),
                 ...items.map((item) {
                   final price = item['avg_unit_price'] as double;
                   return _buildPdfCell(ttf, '₺${price.toStringAsFixed(2)}');
@@ -273,7 +280,7 @@ class PdfService {
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: PdfColors.green50),
               children: [
-                _buildPdfCell(ttf, 'TOPLAM FİYAT', isBold: true),
+                _buildPdfCell(ttf, translations['totalPrice']?.toUpperCase() ?? 'TOTAL PRICE', isBold: true),
                 ...items.map((item) {
                   final total = itemTotals[item['id'] as int] ?? 0;
                   final price = item['avg_unit_price'] as double;
@@ -323,6 +330,7 @@ class PdfService {
     required List<Map<String, dynamic>> items,
     required Map<int, int> itemTotals,
     required bool includePrices,
+    required Map<String, String> translations,
   }) {
     if (!includePrices) return pw.SizedBox();
 
@@ -345,7 +353,7 @@ class PdfService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'GENEL TOPLAM',
+            translations['grandTotal']?.toUpperCase() ?? 'GRAND TOTAL',
             style: pw.TextStyle(
               font: ttf,
               fontSize: 11,
@@ -370,6 +378,7 @@ class PdfService {
   static pw.Widget _buildPdfFooter({
     required pw.Font ttf,
     required DateTime now,
+    required Map<String, String> translations,
   }) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(vertical: 6),
@@ -388,7 +397,7 @@ class PdfService {
           ),
           pw.SizedBox(width: 4),
           pw.Text(
-            'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(now)}',
+            '${translations['date']}: ${DateFormat('dd.MM.yyyy HH:mm').format(now)}',
             style: pw.TextStyle(
               font: ttf,
               fontSize: 7,

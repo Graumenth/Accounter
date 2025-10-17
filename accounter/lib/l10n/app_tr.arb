@@ -79,5 +79,7 @@
   "newCompany": "Yeni Şirket",
   "editCompany": "Şirketi Düzenle",
   "newItem": "Yeni Ürün",
-  "editItem": "Ürünü Düzenle"
+  "editItem": "Ürünü Düzenle",
+  "startDate": "Başlangıç",
+  "endDate": "Bitiş"
 }

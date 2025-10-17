@@ -79,5 +79,7 @@
   "newCompany": "New Company",
   "editCompany": "Edit Company",
   "newItem": "New Item",
-  "editItem": "Edit Item"
+  "editItem": "Edit Item",
+  "startDate": "Start",
+  "endDate": "End"
 }

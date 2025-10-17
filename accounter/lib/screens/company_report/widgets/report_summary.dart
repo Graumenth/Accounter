@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../constants/app_colors.dart';
+import '/l10n/app_localizations.dart';
+import '../../../../constants/app_colors.dart';
 
 class ReportSummary extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -13,60 +14,73 @@ class ReportSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int grandTotal = 0;
-    int totalQuantity = 0;
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    double grandTotal = 0;
     for (var item in items) {
-      final qty = itemTotals[item['id'] as int] ?? 0;
+      final total = itemTotals[item['id'] as int] ?? 0;
       final price = item['avg_unit_price'] as double;
-      grandTotal += (qty * price * 100).toInt();
-      totalQuantity += qty;
+      grandTotal += total * price;
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        gradient: LinearGradient(
+          colors: isDark
+              ? [AppColors.darkPrimary, AppColors.darkPrimary]
+              : [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: AppRadius.lgRadius,
         boxShadow: AppShadows.md,
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.mdRadius,
+                ),
+                child: const Icon(
+                  Icons.receipt_long,
+                  color: AppColors.surface,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.lg),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Toplam Adet',
-                    style: AppTextStyles.caption,
+                    l10n.grandTotal,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.surface.withValues(alpha: 0.9),
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
-                    totalQuantity.toString(),
-                    style: AppTextStyles.heading2,
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Genel Toplam',
-                    style: AppTextStyles.caption,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${(grandTotal / 100).toStringAsFixed(2)} ₺',
-                    style: AppTextStyles.priceLarge.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 28,
+                    '${items.length} ${l10n.items}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.surface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
               ),
             ],
+          ),
+          Text(
+            '₺${grandTotal.toStringAsFixed(2)}',
+            style: AppTextStyles.heading1.copyWith(
+              color: AppColors.surface,
+              fontSize: 32,
+            ),
           ),
         ],
       ),
