@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../models/item.dart';
 
-Future<dynamic> showItemDialog(BuildContext context, {Item? item}) async {
+Future<dynamic> showItemDialog(
+    BuildContext context, {
+      Item? item,
+      required String itemNameLabel,
+      required String priceLabel,
+      required String colorLabel,
+      required String cancelLabel,
+      required String saveLabel,
+      String? deleteLabel,
+    }) async {
   final nameController = TextEditingController(text: item?.name ?? '');
   final priceController = TextEditingController(
     text: item != null ? item.basePriceTL.toStringAsFixed(2) : '',
@@ -17,25 +26,25 @@ Future<dynamic> showItemDialog(BuildContext context, {Item? item}) async {
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(isEdit ? 'Ürünü Düzenle' : 'Yeni Ürün'),
+        title: Text(isEdit ? '$saveLabel $itemNameLabel' : '$saveLabel $itemNameLabel'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Ürün Adı',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: itemNameLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 autofocus: true,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: priceController,
-                decoration: const InputDecoration(
-                  labelText: 'Fiyat (TL)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: priceLabel,
+                  border: const OutlineInputBorder(),
                   prefixText: '₺ ',
                 ),
                 keyboardType: TextInputType.number,
@@ -46,15 +55,21 @@ Future<dynamic> showItemDialog(BuildContext context, {Item? item}) async {
                   final color = await showDialog<Color>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Renk Seç'),
+                      title: Text(colorLabel),
                       content: SingleChildScrollView(
-                        child: BlockPicker(
+                        child: ColorPicker(
                           pickerColor: selectedColor,
                           onColorChanged: (color) {
-                            Navigator.pop(context, color);
+                            selectedColor = color;
                           },
                         ),
                       ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, selectedColor),
+                          child: Text(saveLabel),
+                        ),
+                      ],
                     ),
                   );
                   if (color != null) {
@@ -62,26 +77,22 @@ Future<dynamic> showItemDialog(BuildContext context, {Item? item}) async {
                   }
                 },
                 child: Container(
-                  height: 56,
+                  height: 50,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(4),
+                    color: selectedColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
+                  child: Center(
+                    child: Text(
+                      colorLabel,
+                      style: TextStyle(
+                        color: selectedColor.computeLuminance() > 0.5
+                            ? Colors.black
+                            : Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Renk Seç'),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -89,30 +100,28 @@ Future<dynamic> showItemDialog(BuildContext context, {Item? item}) async {
           ),
         ),
         actions: [
-          if (isEdit)
+          if (isEdit && deleteLabel != null)
             TextButton(
               onPressed: () => Navigator.pop(context, 'delete'),
-              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+              child: Text(deleteLabel, style: const TextStyle(color: Colors.red)),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: Text(cancelLabel),
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.trim().isNotEmpty &&
-                  priceController.text.trim().isNotEmpty) {
-                final price = double.tryParse(priceController.text.trim());
-                if (price != null) {
-                  Navigator.pop(context, {
-                    'name': nameController.text.trim(),
-                    'priceCents': (price * 100).toInt(),
-                    'color': '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}',
-                  });
-                }
-              }
+              if (nameController.text.trim().isEmpty) return;
+              final price = double.tryParse(priceController.text);
+              if (price == null) return;
+
+              Navigator.pop(context, {
+                'name': nameController.text.trim(),
+                'priceCents': (price * 100).toInt(),
+                'color': '#${selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
+              });
             },
-            child: Text(isEdit ? 'Kaydet' : 'Ekle'),
+            child: Text(saveLabel),
           ),
         ],
       ),

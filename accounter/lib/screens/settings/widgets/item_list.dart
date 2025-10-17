@@ -13,16 +13,18 @@ class ItemList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[300]),
+            Icon(Icons.inventory_2_outlined, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
             const SizedBox(height: 16),
             Text(
               'Henüz ürün eklenmemiş',
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
             ),
           ],
         ),
@@ -31,7 +33,7 @@ class ItemList extends StatelessWidget {
 
     return ListView.separated(
       itemCount: items.length,
-      separatorBuilder: (context, index) => const Divider(height: 1),
+      separatorBuilder: (context, index) => Divider(height: 1, color: theme.dividerColor),
       itemBuilder: (context, index) {
         final item = items[index];
         final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
@@ -46,16 +48,17 @@ class ItemList extends StatelessWidget {
           ),
           title: Text(
             item.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           subtitle: Text(
             '${item.basePriceTL.toStringAsFixed(2)} ₺',
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
           ),
-          trailing: const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
+          trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurface.withOpacity(0.5)),
           onTap: () => onEdit(item),
         );
       },

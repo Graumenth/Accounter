@@ -1,194 +1,147 @@
 import 'package:flutter/material.dart';
-import '../../../../constants/app_colors.dart';
 
 class ReportTable extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
-  final List<String> sortedDates;
-  final Map<String, Map<int, int>> salesMap;
-  final Map<int, int> itemTotals;
+  final List<Map<String, dynamic>> reportData;
 
   const ReportTable({
     super.key,
-    required this.items,
-    required this.sortedDates,
-    required this.salesMap,
-    required this.itemTotals,
+    required this.reportData,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (reportData.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'Bu tarih aralığında veri bulunamadı',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
+      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.lgRadius,
-        border: Border.all(color: AppColors.border),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          _buildTableHeader(),
-          ...sortedDates.map((date) => _buildTableRow(date)),
-          _buildTotalRow(),
-          _buildPriceRow(),
-          _buildTotalPriceRow(),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Ürün',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Adet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Ciro',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: reportData.length,
+            separatorBuilder: (context, index) => Divider(height: 1, color: theme.dividerColor),
+            itemBuilder: (context, index) {
+              final item = reportData[index];
+              final itemColor = Color(int.parse(item['item_color'].replaceFirst('#', '0xFF')));
+
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: itemColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        item['item_name'],
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        item['total_quantity'].toString(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '${(item['total_revenue'] as double).toStringAsFixed(2)} ₺',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
-  }
-
-  Widget _buildTableHeader() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppRadius.lg),
-          topRight: Radius.circular(AppRadius.lg),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildHeaderCell('Tarih', width: 100),
-          ...items.map((item) => _buildHeaderCell(item['name'] as String)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderCell(String text, {double width = 120}) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: AppColors.surface.withOpacity(0.3)),
-        ),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.body.copyWith(
-          color: AppColors.surface,
-          fontWeight: FontWeight.w600,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildTableRow(String date) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppColors.border),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildCell(_formatDate(date), width: 100),
-          ...items.map((item) {
-            final quantity = salesMap[date]?[item['id'] as int] ?? 0;
-            return _buildCell(
-              quantity > 0 ? quantity.toString() : '-',
-              isHighlighted: quantity > 0,
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalRow() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 2),
-          bottom: BorderSide(color: AppColors.border),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildCell('Toplam Birim', width: 100, isBold: true),
-          ...items.map((item) {
-            final total = itemTotals[item['id'] as int] ?? 0;
-            return _buildCell(total.toString(), isBold: true);
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceRow() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        children: [
-          _buildCell('Birim Fiyat', width: 100, isBold: true),
-          ...items.map((item) {
-            final price = item['avg_unit_price'] as double;
-            return _buildCell('₺${price.toStringAsFixed(2)}');
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTotalPriceRow() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(AppRadius.lg),
-          bottomRight: Radius.circular(AppRadius.lg),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildCell('Toplam Fiyat', width: 100, isBold: true),
-          ...items.map((item) {
-            final total = itemTotals[item['id'] as int] ?? 0;
-            final price = item['avg_unit_price'] as double;
-            final totalPrice = total * price;
-            return _buildCell(
-              '₺${totalPrice.toStringAsFixed(2)}',
-              isBold: true,
-              color: AppColors.primary,
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCell(
-      String text, {
-        double width = 120,
-        bool isBold = false,
-        bool isHighlighted = false,
-        Color? color,
-      }) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: AppColors.border),
-        ),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
-          fontSize: 14,
-          color: color ?? (isHighlighted ? AppColors.primary : AppColors.textPrimary),
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  String _formatDate(String dateString) {
-    final date = DateTime.parse(dateString);
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 }

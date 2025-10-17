@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 import '../../models/company.dart';
 import '../../models/item.dart';
 import '../../models/sale.dart';
@@ -137,75 +138,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void onCompanyChanged(Company? company) {
-    setState(() {
-      selectedCompany = company;
-    });
-  }
-
-  Future<void> addSaleFromGrid(Item item) async {
-    _checkAndUpdateDate();
-    if (selectedCompany == null) return;
-
-    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
-      selectedCompany!.id!,
-      item.id!,
-    );
-
-    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
-
-    final sale = Sale(
-      itemId: item.id!,
-      date: Sale.dateToString(selectedDate),
-      companyId: selectedCompany!.id!,
-      quantity: 1,
-      unitPrice: unitPrice,
-    );
-
-    await DatabaseService.instance.insertSale(sale);
-    await loadDailySales();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${item.name} eklendi'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
-  Future<void> addSale(Item item, int companyId) async {
-    _checkAndUpdateDate();
-    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
-      companyId,
-      item.id!,
-    );
-
-    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
-
-    final sale = Sale(
-      itemId: item.id!,
-      date: Sale.dateToString(selectedDate),
-      companyId: companyId,
-      quantity: 1,
-      unitPrice: unitPrice,
-    );
-
-    await DatabaseService.instance.insertSale(sale);
-    await loadDailySales();
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${item.name} eklendi'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
+    setState(() => selectedCompany = company);
   }
 
   Future<void> updateSaleQuantity(int saleId, int newQuantity) async {
-    _checkAndUpdateDate();
     if (newQuantity <= 0) {
       await DatabaseService.instance.deleteSale(saleId);
     } else {
@@ -214,8 +150,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await loadDailySales();
   }
 
+  Future<void> addSale(Item item, int companyId) async {
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(companyId, item.id!);
+    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
+
+    final sale = Sale(
+      itemId: item.id!,
+      companyId: companyId,
+      quantity: 1,
+      unitPrice: unitPrice,
+      date: Sale.dateToString(selectedDate),
+    );
+
+    await DatabaseService.instance.insertSale(sale);
+    await loadDailySales();
+  }
+
+  Future<void> addSaleFromGrid(Item item) async {
+    if (selectedCompany == null) return;
+
+    final companyId = selectedCompanyFilter ?? selectedCompany!.id!;
+    await addSale(item, companyId);
+    setState(() => showItemGrid = false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFC),
       body: isLoading
@@ -225,16 +187,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           : Column(
         children: [
           AppHeader(
+            title: l10n.accounter,
+            statisticsTooltip: l10n.statistics,
+            settingsTooltip: l10n.settings,
             onSettingsChanged: () => loadData(),
           ),
           DateSelector(
             selectedDate: selectedDate,
             onDateChanged: changeDate,
+            todayLabel: l10n.today,
+            yesterdayLabel: l10n.yesterday,
+            tomorrowLabel: l10n.tomorrow,
           ),
           CategoryTabs(
             companies: companies,
             selectedCompanyId: selectedCompanyFilter,
             onCompanySelected: onCompanyFilterChanged,
+            allLabel: l10n.all,
           ),
           Expanded(
             child: Stack(
@@ -244,6 +213,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   sales: filteredSales,
                   onUpdateQuantity: updateSaleQuantity,
                   onAddItem: addSale,
+                  noSalesText: l10n.noSales,
+                  dragItemText: l10n.dragItemHere,
                 ),
                 if (!showItemGrid)
                   Positioned(
@@ -256,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       },
                       backgroundColor: const Color(0xFF38A169),
                       icon: const Icon(Icons.add),
-                      label: const Text('Satış Ekle'),
+                      label: Text(l10n.addSale),
                     ),
                   ),
               ],
@@ -273,6 +244,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               onClose: () => setState(() => showItemGrid = false),
               hideCompanySelector: selectedCompanyFilter != null,
               onAddItem: addSaleFromGrid,
+              selectCompanyLabel: l10n.selectCompany,
+              closeLabel: l10n.close,
             ),
           DailyTotalBar(
             dailyTotal: dailyTotal,
@@ -280,6 +253,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             companyName: selectedCompanyFilter != null
                 ? companies.firstWhere((c) => c.id == selectedCompanyFilter).name
                 : null,
+            dailyTotalLabel: l10n.dailyTotal,
+            grandTotalLabel: l10n.grandTotal,
           ),
         ],
       ),

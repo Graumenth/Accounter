@@ -2,28 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../models/company.dart';
 
-Future<Map<String, dynamic>?> showCompanyDialog(BuildContext context, {Company? company}) async {
+Future<dynamic> showCompanyDialog(
+    BuildContext context, {
+      Company? company,
+      required String companyNameLabel,
+      required String colorLabel,
+      required String cancelLabel,
+      required String saveLabel,
+      String? deleteLabel,
+    }) async {
   final nameController = TextEditingController(text: company?.name ?? '');
   Color selectedColor = company != null
       ? Color(int.parse('0xFF${company.color.substring(1)}'))
-      : const Color(0xFF2563EB);
+      : const Color(0xFF38A169);
 
   final isEdit = company != null;
 
-  return await showDialog<Map<String, dynamic>>(
+  return await showDialog<dynamic>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(isEdit ? 'Şirketi Düzenle' : 'Yeni Şirket'),
+        title: Text(isEdit ? '$saveLabel $companyNameLabel' : '$saveLabel $companyNameLabel'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Şirket Adı',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: companyNameLabel,
+                  border: const OutlineInputBorder(),
                 ),
                 autofocus: true,
               ),
@@ -33,15 +41,21 @@ Future<Map<String, dynamic>?> showCompanyDialog(BuildContext context, {Company? 
                   final color = await showDialog<Color>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Renk Seç'),
+                      title: Text(colorLabel),
                       content: SingleChildScrollView(
-                        child: BlockPicker(
+                        child: ColorPicker(
                           pickerColor: selectedColor,
                           onColorChanged: (color) {
-                            Navigator.pop(context, color);
+                            selectedColor = color;
                           },
                         ),
                       ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, selectedColor),
+                          child: Text(saveLabel),
+                        ),
+                      ],
                     ),
                   );
                   if (color != null) {
@@ -49,26 +63,22 @@ Future<Map<String, dynamic>?> showCompanyDialog(BuildContext context, {Company? 
                   }
                 },
                 child: Container(
-                  height: 56,
+                  height: 50,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(4),
+                    color: selectedColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
+                  child: Center(
+                    child: Text(
+                      colorLabel,
+                      style: TextStyle(
+                        color: selectedColor.computeLuminance() > 0.5
+                            ? Colors.black
+                            : Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Renk Seç'),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -76,25 +86,24 @@ Future<Map<String, dynamic>?> showCompanyDialog(BuildContext context, {Company? 
           ),
         ),
         actions: [
-          if (isEdit)
+          if (isEdit && deleteLabel != null)
             TextButton(
-              onPressed: () => Navigator.pop(context, {'action': 'delete'}),
-              child: const Text('Sil', style: TextStyle(color: Colors.red)),
+              onPressed: () => Navigator.pop(context, 'delete'),
+              child: Text(deleteLabel, style: const TextStyle(color: Colors.red)),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: Text(cancelLabel),
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.trim().isNotEmpty) {
-                Navigator.pop(context, {
-                  'name': nameController.text.trim(),
-                  'color': '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}',
-                });
-              }
+              if (nameController.text.trim().isEmpty) return;
+              Navigator.pop(context, {
+                'name': nameController.text.trim(),
+                'color': '#${selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
+              });
             },
-            child: Text(isEdit ? 'Kaydet' : 'Ekle'),
+            child: Text(saveLabel),
           ),
         ],
       ),

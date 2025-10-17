@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
+import '/l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../models/company.dart';
 import '../../models/item.dart';
@@ -40,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Future<void> backupDatabase(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     var storageStatus = await Permission.storage.request();
     var manageStatus = await Permission.manageExternalStorage.request();
 
@@ -61,96 +63,135 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Dosya paylaşmak için depolama izni gerekli! Ayarlardan izin verin.')),
+            SnackBar(content: Text(l10n.storagePermissionRequired)),
           );
         }
       }
     }
   }
 
-  Future<void> handleAddCompany() async {
-    final result = await showCompanyDialog(context);
+  Future<void> handleAddCompany(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showCompanyDialog(
+      context,
+      companyNameLabel: l10n.companyName,
+      colorLabel: l10n.color,
+      cancelLabel: l10n.cancel,
+      saveLabel: l10n.save,
+    );
     if (result != null && result is Map<String, dynamic> && result['name'] != null) {
       await DatabaseService.instance.insertCompany(
         Company(
           name: result['name'],
-          color: result['color'] ?? '#2563EB',
+          color: result['color'] ?? '#38A169',
         ),
       );
       loadData();
     }
   }
 
-  Future<void> handleEditCompany(Company company) async {
-    final result = await showCompanyDialog(context, company: company);
-    if (result != null && result is Map<String, dynamic>) {
-      if (result['action'] == 'delete') {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Şirketi Sil'),
-            content: Text('${company.name} şirketini silmek istediğinize emin misiniz?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('İptal'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Sil'),
-              ),
-            ],
-          ),
-        );
-        if (confirm == true) {
-          await DatabaseService.instance.deleteCompany(company.id!);
-          loadData();
-        }
-      } else if (result['name'] != null) {
-        await DatabaseService.instance.updateCompany(
-          Company(
-            id: company.id,
-            name: result['name'],
-            color: result['color'] ?? company.color,
-          ),
-        );
-        loadData();
-      }
-    }
-  }
+  Future<void> handleEditCompany(Company company, BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showCompanyDialog(
+      context,
+      company: company,
+      companyNameLabel: l10n.companyName,
+      colorLabel: l10n.color,
+      cancelLabel: l10n.cancel,
+      saveLabel: l10n.save,
+      deleteLabel: l10n.delete,
+    );
 
-  Future<void> handleAddItem() async {
-    final itemData = await showItemDialog(context);
-    if (itemData != null) {
-      await DatabaseService.instance.insertItem(
-        Item(
-          name: itemData['name'],
-          basePriceCents: itemData['priceCents'],
-          color: itemData['color'],
-        ),
-      );
-      loadData();
-    }
-  }
+    if (!mounted) return;
 
-  Future<void> handleEditItem(Item item) async {
-    final result = await showItemDialog(context, item: item);
     if (result == 'delete') {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Ürünü Sil'),
-          content: Text('${item.name} ürününü silmek istediğinize emin misiniz?'),
+          title: Text(l10n.deleteCompany),
+          content: Text(l10n.deleteCompanyConfirm),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Sil'),
+              child: Text(l10n.delete),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (confirm == true) {
+        await DatabaseService.instance.deleteCompany(company.id!);
+        loadData();
+      }
+    } else if (result != null && result is Map<String, dynamic>) {
+      await DatabaseService.instance.updateCompany(
+        Company(
+          id: company.id,
+          name: result['name'],
+          color: result['color'],
+        ),
+      );
+      loadData();
+    }
+  }
+
+  Future<void> handleAddItem(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showItemDialog(
+      context,
+      itemNameLabel: l10n.itemName,
+      priceLabel: l10n.price,
+      colorLabel: l10n.color,
+      cancelLabel: l10n.cancel,
+      saveLabel: l10n.save,
+    );
+    if (result != null && result is Map<String, dynamic> && result['name'] != null) {
+      await DatabaseService.instance.insertItem(
+        Item(
+          name: result['name'],
+          basePriceCents: result['priceCents'],
+          color: result['color'] ?? '#38A169',
+        ),
+      );
+      loadData();
+    }
+  }
+
+  Future<void> handleEditItem(Item item, BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await showItemDialog(
+      context,
+      item: item,
+      itemNameLabel: l10n.itemName,
+      priceLabel: l10n.price,
+      colorLabel: l10n.color,
+      cancelLabel: l10n.cancel,
+      saveLabel: l10n.save,
+      deleteLabel: l10n.delete,
+    );
+
+    if (!mounted) return;
+
+    if (result == 'delete') {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteItem),
+          content: Text(l10n.deleteItemConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text(l10n.delete),
             ),
           ],
         ),
@@ -175,6 +216,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -184,9 +227,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Ayarlar',
-          style: TextStyle(
+        title: Text(
+          l10n.settings,
+          style: const TextStyle(
             color: Color(0xFF1A202C),
             fontWeight: FontWeight.w600,
           ),
@@ -196,22 +239,32 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           labelColor: const Color(0xFF38A169),
           unselectedLabelColor: const Color(0xFF4A5568),
           indicatorColor: const Color(0xFF38A169),
-          tabs: const [
-            Tab(text: 'Şirketler'),
-            Tab(text: 'Ürünler'),
+          tabs: [
+            Tab(text: l10n.companies),
+            Tab(text: l10n.items),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person, color: Color(0xFF38A169)),
-            tooltip: 'Şirket Bilgileri',
+            tooltip: l10n.companyInfo,
             onPressed: () async {
-              final name = await showProfileDialog(context);
+              final name = await showProfileDialog(
+                context,
+                companyInfoLabel: l10n.companyInfo,
+                yourCompanyNameLabel: l10n.yourCompanyName,
+                usedInPdfReportsLabel: l10n.usedInPdfReports,
+                companyLogoLabel: l10n.companyLogo,
+                addLogoLabel: l10n.addLogo,
+                removeLogoLabel: l10n.removeLogo,
+                cancelLabel: l10n.cancel,
+                saveLabel: l10n.save,
+              );
               if (name != null) {
                 await ProfileManager.setCompanyName(name);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Şirket bilgileri kaydedildi')),
+                    SnackBar(content: Text(l10n.companySaved)),
                   );
                 }
               }
@@ -219,7 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
           ),
           IconButton(
             icon: const Icon(Icons.backup, color: Color(0xFF38A169)),
-            tooltip: 'Backup Database',
+            tooltip: l10n.backupDatabase,
             onPressed: () => backupDatabase(context),
           ),
         ],
@@ -231,31 +284,25 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         children: [
           CompanyList(
             companies: companies,
-            onEdit: handleEditCompany,
+            onEdit: (company) => handleEditCompany(company, context),
           ),
           ItemList(
             items: items,
-            onEdit: handleEditItem,
+            onEdit: (item) => handleEditItem(item, context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (_tabController.index == 0) {
-            handleAddCompany();
+            handleAddCompany(context);
           } else {
-            handleAddItem();
+            handleAddItem(context);
           }
         },
         backgroundColor: const Color(0xFF38A169),
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 }

@@ -4,11 +4,17 @@ import 'package:intl/intl.dart';
 class DateSelector extends StatefulWidget {
   final DateTime selectedDate;
   final Function(int) onDateChanged;
+  final String todayLabel;
+  final String yesterdayLabel;
+  final String tomorrowLabel;
 
   const DateSelector({
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
+    required this.todayLabel,
+    required this.yesterdayLabel,
+    required this.tomorrowLabel,
   });
 
   @override
@@ -53,11 +59,11 @@ class _DateSelectorState extends State<DateSelector> {
 
   String getDateLabel(DateTime date) {
     if (isSameDay(date, todayMidnight)) {
-      return 'Bugün';
+      return widget.todayLabel;
     } else if (isSameDay(date, todayMidnight.subtract(const Duration(days: 1)))) {
-      return 'Dün';
+      return widget.yesterdayLabel;
     } else if (isSameDay(date, todayMidnight.add(const Duration(days: 1)))) {
-      return 'Yarın';
+      return widget.tomorrowLabel;
     }
     return DateFormat('dd MMM', 'tr_TR').format(date);
   }
@@ -76,141 +82,45 @@ class _DateSelectorState extends State<DateSelector> {
               color: const Color(0xFFE2E8F0),
             ),
             SizedBox(
-              height: 56,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Container(color: Colors.white),
-                  ),
-                  Positioned(
-                    left: 48,
-                    right: 48,
-                    top: 8,
-                    bottom: 8,
-                    child: Center(
-                      child: Container(
-                        width: itemWidth,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F4F8),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+              height: 64,
+              child: PageView.builder(
+                controller: _pageController,
+                itemBuilder: (context, index) {
+                  final date = todayMidnight.add(Duration(days: index - 500));
+                  final isSelected = isSameDay(date, widget.selectedDate);
+                  return SizedBox(
+                    width: itemWidth,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF38A169) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat('EEE', 'tr_TR').format(date).toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white : const Color(0xFF718096),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            getDateLabel(date),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : const Color(0xFF1A202C),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: 48,
-                    right: 48,
-                    top: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onVerticalDragEnd: (details) {
-                        final velocity = details.velocity.pixelsPerSecond;
-                        if (velocity.dy.abs() > 1000 && velocity.dy.abs() > velocity.dx.abs() * 2) {
-                          final selectedMidnight = DateTime(
-                            widget.selectedDate.year,
-                            widget.selectedDate.month,
-                            widget.selectedDate.day,
-                          );
-                          final difference = selectedMidnight.difference(todayMidnight).inDays;
-                          if (difference != 0) {
-                            _pageController.animateToPage(
-                              _currentPage - difference,
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                            );
-                          }
-                        }
-                      },
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: 1000,
-                        itemBuilder: (context, index) {
-                          final dayOffset = index - 500;
-                          final date = todayMidnight.add(Duration(days: dayOffset));
-
-                          return AnimatedBuilder(
-                            animation: _pageController,
-                            builder: (context, child) {
-                              double value = 1.0;
-                              if (_pageController.position.haveDimensions) {
-                                value = (_pageController.page ?? _currentPage.toDouble()) - index;
-                                value = (1 - (value.abs() * 0.3)).clamp(0.7, 1.0);
-                              }
-                              final isCenter = value > 0.95;
-                              return Center(
-                                child: Semantics(
-                                  label: getDateLabel(date),
-                                  selected: isCenter,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _pageController.animateToPage(
-                                        index,
-                                        duration: const Duration(milliseconds: 300),
-                                        curve: Curves.easeInOut,
-                                      );
-                                    },
-                                    child: Transform.scale(
-                                      scale: value,
-                                      child: Opacity(
-                                        opacity: (0.3 + (value * 0.7)).clamp(0.3, 1.0),
-                                        child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            getDateLabel(date),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: isCenter ? FontWeight.w600 : FontWeight.w400,
-                                              color: isCenter ? const Color(0xFF1A202C) : const Color(0xFF4A5568),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 48,
-                    child: IconButton(
-                      tooltip: 'Önceki gün',
-                      icon: const Icon(Icons.chevron_left, size: 24),
-                      onPressed: () {
-                        _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      color: const Color(0xFF4A5568),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 48,
-                    child: IconButton(
-                      tooltip: 'Sonraki gün',
-                      icon: const Icon(Icons.chevron_right, size: 24),
-                      onPressed: () {
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      color: const Color(0xFF4A5568),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
             Container(

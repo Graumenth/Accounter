@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appTitle": "Accounting",
+  "accounter": "Accounter",
   "sales": "Sales",
   "addSale": "Add Sale",
   "companies": "Companies",
@@ -8,6 +9,8 @@
   "settings": "Settings",
   "statistics": "Statistics",
   "today": "Today",
+  "yesterday": "Yesterday",
+  "tomorrow": "Tomorrow",
   "thisWeek": "This Week",
   "thisMonth": "This Month",
   "thisYear": "This Year",
@@ -48,5 +51,17 @@
   "date": "Date",
   "color": "Color",
   "close": "Close",
-  "all": "All"
+  "all": "All",
+  "companyInfo": "Company Information",
+  "yourCompanyName": "Your Company Name",
+  "usedInPdfReports": "Will be used in PDF reports",
+  "companyLogo": "Company Logo",
+  "addLogo": "Add Logo",
+  "removeLogo": "Remove Logo",
+  "myCompany": "My Company",
+  "backupDatabase": "Backup Database",
+  "storagePermissionRequired": "Storage permission required to share files! Please grant permission in settings.",
+  "companySaved": "Company information saved",
+  "dragItemHere": "Drag item here",
+  "custom": "Custom"
 }

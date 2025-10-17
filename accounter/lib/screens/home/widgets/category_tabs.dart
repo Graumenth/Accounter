@@ -5,12 +5,14 @@ class CategoryTabs extends StatelessWidget {
   final List<Company> companies;
   final int? selectedCompanyId;
   final Function(int?) onCompanySelected;
+  final String allLabel;
 
   const CategoryTabs({
     super.key,
     required this.companies,
     required this.selectedCompanyId,
     required this.onCompanySelected,
+    required this.allLabel,
   });
 
   @override
@@ -21,10 +23,10 @@ class CategoryTabs extends StatelessWidget {
           height: 56,
           color: Colors.white,
           child: companies.isEmpty
-              ? const Center(
+              ? Center(
             child: Text(
-              'Tümü',
-              style: TextStyle(
+              allLabel,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF38A169),
@@ -35,7 +37,7 @@ class CategoryTabs extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             children: [
-              _buildTab('Tümü', null, const Color(0xFF38A169)),
+              _buildTab(allLabel, null, const Color(0xFF38A169)),
               ...companies.map((company) {
                 final companyColor = Color(int.parse(company.color.replaceFirst('#', '0xFF')));
                 return _buildTab(company.name, company.id, companyColor);

@@ -5,10 +5,14 @@ class DailyTotalBar extends StatelessWidget {
   final int dailyTotal;
   final int? companyTotal;
   final String? companyName;
+  final String dailyTotalLabel;
+  final String grandTotalLabel;
 
   const DailyTotalBar({
     super.key,
     required this.dailyTotal,
+    required this.dailyTotalLabel,
+    required this.grandTotalLabel,
     this.companyTotal,
     this.companyName,
   });
@@ -51,45 +55,56 @@ class DailyTotalBar extends StatelessWidget {
                       SizedBox(height: AppSpacing.xs),
                       Text(
                         '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
-                        style: AppTextStyles.heading2,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 SizedBox(width: AppSpacing.lg),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Genel Toplam',
-                      style: AppTextStyles.caption,
-                    ),
-                    SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                      style: AppTextStyles.priceLarge.copyWith(
-                        color: AppColors.primary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        grandTotalLabel,
+                        style: AppTextStyles.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             )
-                : Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Günlük Toplam',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  dailyTotalLabel,
+                  style: AppTextStyles.caption,
                 ),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                  style: AppTextStyles.priceLarge.copyWith(
-                    color: AppColors.primary,
+                  style: const TextStyle(
                     fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
               ],

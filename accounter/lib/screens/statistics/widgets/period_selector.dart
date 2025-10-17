@@ -3,11 +3,21 @@ import 'package:flutter/material.dart';
 class PeriodSelector extends StatelessWidget {
   final String selectedPeriod;
   final Function(String) onPeriodChanged;
+  final String todayLabel;
+  final String thisWeekLabel;
+  final String thisMonthLabel;
+  final String thisYearLabel;
+  final String selectDateLabel;
 
   const PeriodSelector({
     super.key,
     required this.selectedPeriod,
     required this.onPeriodChanged,
+    required this.todayLabel,
+    required this.thisWeekLabel,
+    required this.thisMonthLabel,
+    required this.thisYearLabel,
+    required this.selectDateLabel,
   });
 
   @override
@@ -19,19 +29,19 @@ class PeriodSelector extends StatelessWidget {
         children: [
           Row(
             children: [
-              _buildPeriodButton('Bugün', 'today'),
+              _buildPeriodButton(todayLabel, 'today'),
               const SizedBox(width: 8),
-              _buildPeriodButton('Bu Hafta', 'week'),
+              _buildPeriodButton(thisWeekLabel, 'week'),
               const SizedBox(width: 8),
-              _buildPeriodButton('Bu Ay', 'month'),
+              _buildPeriodButton(thisMonthLabel, 'month'),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildPeriodButton('Bu Yıl', 'year'),
+              _buildPeriodButton(thisYearLabel, 'year'),
               const SizedBox(width: 8),
-              _buildPeriodButton('Tarih Seç', 'custom', icon: Icons.calendar_today),
+              _buildPeriodButton(selectDateLabel, 'custom', icon: Icons.calendar_today),
             ],
           ),
         ],

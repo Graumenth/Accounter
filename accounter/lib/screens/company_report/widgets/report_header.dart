@@ -1,64 +1,72 @@
 import 'package:flutter/material.dart';
-import '../../../../constants/app_colors.dart';
+import 'package:intl/intl.dart';
 
 class ReportHeader extends StatelessWidget {
-  final String companyName;
   final DateTime startDate;
   final DateTime endDate;
 
   const ReportHeader({
     super.key,
-    required this.companyName,
     required this.startDate,
     required this.endDate,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat('dd.MM.yyyy');
+
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: AppRadius.lgRadius,
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-      ),
+      padding: const EdgeInsets.all(16),
+      color: theme.colorScheme.surface,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: AppRadius.mdRadius,
-            ),
-            child: const Icon(
-              Icons.business,
-              color: AppColors.surface,
-              size: 32,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Başlangıç',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                dateFormat.format(startDate),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  companyName,
-                  style: AppTextStyles.heading2,
+          Icon(Icons.arrow_forward, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Bitiş',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${_formatDate(startDate)} - ${_formatDate(endDate)}',
-                  style: AppTextStyles.bodySecondary,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                dateFormat.format(endDate),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 }

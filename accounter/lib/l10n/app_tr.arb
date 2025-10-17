@@ -1,6 +1,7 @@
 {
   "@@locale": "tr",
   "appTitle": "Muhasebe",
+  "accounter": "Accounter",
   "sales": "Satışlar",
   "addSale": "Satış Ekle",
   "companies": "Şirketler",
@@ -8,6 +9,8 @@
   "settings": "Ayarlar",
   "statistics": "İstatistikler",
   "today": "Bugün",
+  "yesterday": "Dün",
+  "tomorrow": "Yarın",
   "thisWeek": "Bu Hafta",
   "thisMonth": "Bu Ay",
   "thisYear": "Bu Yıl",
@@ -48,5 +51,17 @@
   "date": "Tarih",
   "color": "Renk",
   "close": "Kapat",
-  "all": "Tümü"
+  "all": "Tümü",
+  "companyInfo": "Şirket Bilgileri",
+  "yourCompanyName": "Şirket Adınız",
+  "usedInPdfReports": "PDF raporlarında kullanılacak",
+  "companyLogo": "Şirket Logosu",
+  "addLogo": "Logo Ekle",
+  "removeLogo": "Logoyu Kaldır",
+  "myCompany": "Şirketim",
+  "backupDatabase": "Backup Database",
+  "storagePermissionRequired": "Dosya paylaşmak için depolama izni gerekli! Ayarlardan izin verin.",
+  "companySaved": "Şirket bilgileri kaydedildi",
+  "dragItemHere": "Ürün buraya sürükle",
+  "custom": "Özel"
 }

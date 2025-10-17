@@ -12,6 +12,8 @@ class ItemGrid extends StatelessWidget {
   final VoidCallback onClose;
   final bool hideCompanySelector;
   final Function(Item) onAddItem;
+  final String selectCompanyLabel;
+  final String closeLabel;
 
   const ItemGrid({
     super.key,
@@ -21,6 +23,8 @@ class ItemGrid extends StatelessWidget {
     required this.onCompanyChanged,
     required this.onClose,
     required this.onAddItem,
+    required this.selectCompanyLabel,
+    required this.closeLabel,
     this.hideCompanySelector = false,
   });
 
@@ -68,9 +72,8 @@ class ItemGrid extends StatelessWidget {
                           child: Text(
                             selectedCompany?.name ?? '',
                             style: const TextStyle(
-                              color: AppColors.primary,
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              color: AppColors.primary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -79,84 +82,88 @@ class ItemGrid extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(width: AppSpacing.sm),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: onClose,
-                  color: AppColors.textSecondary,
                 ),
               ],
             )
                 : Row(
               children: [
                 Expanded(
-                  child: companies.isEmpty
-                      ? Center(
-                    child: const Text(
-                      'Şirket yok',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.mdRadius,
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<Company>(
+                        value: selectedCompany,
+                        isExpanded: true,
+                        hint: Text(selectCompanyLabel),
+                        items: companies.map((company) {
+                          return DropdownMenuItem<Company>(
+                            value: company,
+                            child: Text(company.name),
+                          );
+                        }).toList(),
+                        onChanged: onCompanyChanged,
                       ),
                     ),
-                  )
-                      : DropdownButtonFormField<Company>(
-                    value: selectedCompany,
-                    decoration: const InputDecoration(
-                      labelText: 'Şirket',
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                    ),
-                    items: companies.map((company) {
-                      return DropdownMenuItem(
-                        value: company,
-                        child: Text(company.name),
-                      );
-                    }).toList(),
-                    onChanged: onCompanyChanged,
                   ),
                 ),
-                SizedBox(width: AppSpacing.sm),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: onClose,
-                  color: AppColors.textSecondary,
                 ),
               ],
             ),
           ),
           Expanded(
-            child: items.isEmpty
+            child: selectedCompany == null
                 ? Center(
-              child: const Text(
-                'Ayarlardan ürün ekleyin',
+              child: Text(
+                selectCompanyLabel,
                 style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontSize: 16,
                 ),
               ),
             )
                 : GridView.builder(
               padding: const EdgeInsets.all(AppSpacing.md),
-              scrollDirection: Axis.horizontal,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                mainAxisSpacing: AppSpacing.md,
-                crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 0.7,
+                childAspectRatio: 3,
+                crossAxisSpacing: AppSpacing.sm,
+                mainAxisSpacing: AppSpacing.sm,
               ),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-                final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
-
-                return _DraggableItemCard(
-                  item: item,
-                  itemColor: itemColor,
-                  selectedCompany: selectedCompany,
-                  onAddItem: onAddItem,
+                return Draggable<Map<String, dynamic>>(
+                  data: {
+                    'item': item,
+                    'companyId': selectedCompany!.id!,
+                  },
+                  feedback: Material(
+                    elevation: 4,
+                    borderRadius: AppRadius.mdRadius,
+                    child: _ItemCard(item: item, isDragging: true),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.3,
+                    child: _ItemCard(item: item),
+                  ),
+                  child: GestureDetector(
+                    onTap: () => onAddItem(item),
+                    child: _ItemCard(item: item),
+                  ),
                 );
               },
             ),
@@ -167,190 +174,54 @@ class ItemGrid extends StatelessWidget {
   }
 }
 
-class _DraggableItemCard extends StatefulWidget {
+class _ItemCard extends StatelessWidget {
   final Item item;
-  final Color itemColor;
-  final Company? selectedCompany;
-  final Function(Item) onAddItem;
+  final bool isDragging;
 
-  const _DraggableItemCard({
+  const _ItemCard({
     required this.item,
-    required this.itemColor,
-    required this.selectedCompany,
-    required this.onAddItem,
+    this.isDragging = false,
   });
 
   @override
-  State<_DraggableItemCard> createState() => _DraggableItemCardState();
-}
-
-class _DraggableItemCardState extends State<_DraggableItemCard> {
-  int? customPriceCents;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCustomPrice();
-  }
-
-  @override
-  void didUpdateWidget(_DraggableItemCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedCompany?.id != widget.selectedCompany?.id) {
-      _loadCustomPrice();
-    }
-  }
-
-  Future<void> _loadCustomPrice() async {
-    if (widget.selectedCompany != null) {
-      setState(() => isLoading = true);
-      final priceCents = await DatabaseService.instance.getCompanyItemPrice(
-        widget.selectedCompany!.id!,
-        widget.item.id!,
-      );
-      if (mounted) {
-        setState(() {
-          customPriceCents = priceCents;
-          isLoading = false;
-        });
-      }
-    } else {
-      setState(() {
-        customPriceCents = null;
-        isLoading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.selectedCompany == null) {
-      return _buildItemCard();
-    }
-
-    return GestureDetector(
-      onTap: () {
-        widget.onAddItem(widget.item);
-      },
-      child: LongPressDraggable<Map<String, dynamic>>(
-        delay: const Duration(milliseconds: 75),
-        hapticFeedbackOnStart: true,
-        data: {
-          'item': widget.item,
-          'companyId': widget.selectedCompany!.id!,
-        },
-        feedback: Material(
-          elevation: 8,
-          borderRadius: AppRadius.lgRadius,
-          child: Container(
-            width: 140,
-            height: 100,
-            decoration: BoxDecoration(
-              color: widget.itemColor,
-              borderRadius: AppRadius.lgRadius,
-            ),
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  widget.item.name,
-                  style: const TextStyle(
-                    color: AppColors.surface,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '${_getDisplayPrice().toStringAsFixed(2)} ₺',
-                  style: TextStyle(
-                    color: AppColors.surface.withOpacity(0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        childWhenDragging: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: AppRadius.lgRadius,
-            border: Border.all(
-              color: AppColors.border,
-              width: 2,
-            ),
-          ),
-        ),
-        child: _buildItemCard(),
-      ),
-    );
-  }
-
-  double _getDisplayPrice() {
-    if (customPriceCents != null) {
-      return customPriceCents! / 100;
-    }
-    return widget.item.basePriceTL;
-  }
-
-  Widget _buildItemCard() {
-    final displayPrice = _getDisplayPrice();
-    final hasCustomPrice = customPriceCents != null;
+    final itemColor = Color(int.parse(item.color.replaceFirst('#', '0xFF')));
 
     return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: widget.itemColor,
-        borderRadius: AppRadius.lgRadius,
-        boxShadow: AppShadows.sm,
+        color: AppColors.surface,
+        borderRadius: AppRadius.mdRadius,
+        border: Border.all(color: itemColor, width: 2),
       ),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          Text(
-            widget.item.name,
-            style: const TextStyle(
-              color: AppColors.surface,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: itemColor,
+              shape: BoxShape.circle,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          if (hasCustomPrice && widget.selectedCompany != null) ...[
-            Text(
-              '${widget.item.basePriceTL.toStringAsFixed(2)} ₺',
-              style: TextStyle(
-                color: AppColors.surface.withOpacity(0.5),
-                fontSize: 10,
-                decoration: TextDecoration.lineThrough,
-              ),
-            ),
-            Text(
-              '${displayPrice.toStringAsFixed(2)} ₺',
+          SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              item.name,
               style: const TextStyle(
-                color: AppColors.surface,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ] else
-            Text(
-              '${displayPrice.toStringAsFixed(2)} ₺',
-              style: TextStyle(
-                color: AppColors.surface.withOpacity(0.9),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          Text(
+            '${item.basePriceTL.toStringAsFixed(2)} ₺',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 13,
             ),
+          ),
         ],
       ),
     );

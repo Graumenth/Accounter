@@ -54,7 +54,17 @@ class ProfileManager {
   }
 }
 
-Future<String?> showProfileDialog(BuildContext context) async {
+Future<String?> showProfileDialog(
+    BuildContext context, {
+      required String companyInfoLabel,
+      required String yourCompanyNameLabel,
+      required String usedInPdfReportsLabel,
+      required String companyLogoLabel,
+      required String addLogoLabel,
+      required String removeLogoLabel,
+      required String cancelLabel,
+      required String saveLabel,
+    }) async {
   final currentName = await ProfileManager.getCompanyName();
   final currentLogo = await ProfileManager.getCompanyLogo();
   final controller = TextEditingController(text: currentName);
@@ -64,24 +74,24 @@ Future<String?> showProfileDialog(BuildContext context) async {
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: const Text('Şirket Bilgileri'),
+        title: Text(companyInfoLabel),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  labelText: 'Şirket Adınız',
-                  border: OutlineInputBorder(),
-                  helperText: 'PDF raporlarında kullanılacak',
+                decoration: InputDecoration(
+                  labelText: yourCompanyNameLabel,
+                  border: const OutlineInputBorder(),
+                  helperText: usedInPdfReportsLabel,
                 ),
                 autofocus: true,
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Şirket Logosu',
-                style: TextStyle(
+              Text(
+                companyLogoLabel,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -118,15 +128,14 @@ Future<String?> showProfileDialog(BuildContext context) async {
                       Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey[600]),
                       const SizedBox(height: 8),
                       Text(
-                        'Logo Ekle',
+                        addLogoLabel,
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
               ),
-              if (logoPath != null && File(logoPath!).existsSync()) ...[
-                const SizedBox(height: 8),
+              if (logoPath != null && File(logoPath!).existsSync())
                 TextButton.icon(
                   onPressed: () async {
                     await ProfileManager.clearCompanyLogo();
@@ -135,24 +144,23 @@ Future<String?> showProfileDialog(BuildContext context) async {
                     });
                   },
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  label: const Text('Logoyu Kaldır', style: TextStyle(color: Colors.red)),
+                  label: Text(removeLogoLabel, style: const TextStyle(color: Colors.red)),
                 ),
-              ],
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+            child: Text(cancelLabel),
           ),
           ElevatedButton(
             onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Navigator.pop(context, controller.text.trim());
-              }
+              final name = controller.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(context, name);
             },
-            child: const Text('Kaydet'),
+            child: Text(saveLabel),
           ),
         ],
       ),

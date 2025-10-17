@@ -1,93 +1,93 @@
 import 'package:flutter/material.dart';
-import '../../../models/sale.dart';
+import '../../../models/company.dart';
 
 class CompanyStats extends StatelessWidget {
-  final List<Map<String, dynamic>> companies;
-  final DateTime startDate;
-  final DateTime endDate;
+  final Company company;
+  final double totalRevenue;
+  final double totalCost;
+  final double profit;
 
   const CompanyStats({
     super.key,
-    required this.companies,
-    required this.startDate,
-    required this.endDate,
+    required this.company,
+    required this.totalRevenue,
+    required this.totalCost,
+    required this.profit,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: companies.map((company) => _buildCompanyItem(context, company)).toList(),
-    );
-  }
+    final theme = Theme.of(context);
+    final companyColor = Color(int.parse(company.color.replaceFirst('#', '0xFF')));
 
-  Widget _buildCompanyItem(BuildContext context, Map<String, dynamic> company) {
-    final total = (company['total'] as int) / 100;
-    final quantity = company['quantity'] as int;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/company-report',
-          arguments: {
-            'companyId': company['id'],
-            'companyName': company['name'],
-            'startDate': Sale.dateToString(startDate),
-            'endDate': Sale.dateToString(endDate),
-          },
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: theme.colorScheme.surface,
+      child: Padding(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    company['name'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$quantity adet',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
             Row(
               children: [
-                Text(
-                  '${total.toStringAsFixed(2)} ₺',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF38A169),
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: companyColor,
+                    shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF4A5568),
+                Expanded(
+                  child: Text(
+                    company.name,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            _buildStatRow(theme, 'Toplam Ciro:', '${totalRevenue.toStringAsFixed(2)} ₺', theme.colorScheme.primary),
+            const SizedBox(height: 8),
+            _buildStatRow(theme, 'Toplam Maliyet:', '${totalCost.toStringAsFixed(2)} ₺', theme.colorScheme.error),
+            const SizedBox(height: 8),
+            Container(
+              height: 1,
+              color: theme.dividerColor,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            _buildStatRow(theme, 'Kar:', '${profit.toStringAsFixed(2)} ₺', profit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatRow(ThemeData theme, String label, String value, Color valueColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: valueColor,
+          ),
+        ),
+      ],
     );
   }
 }

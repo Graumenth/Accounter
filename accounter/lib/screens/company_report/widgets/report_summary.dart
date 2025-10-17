@@ -1,82 +1,71 @@
 import 'package:flutter/material.dart';
-import '../../../../constants/app_colors.dart';
 
 class ReportSummary extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
-  final Map<int, int> itemTotals;
+  final double totalRevenue;
+  final double totalCost;
+  final double profit;
+  final int totalQuantity;
 
   const ReportSummary({
     super.key,
-    required this.items,
-    required this.itemTotals,
+    required this.totalRevenue,
+    required this.totalCost,
+    required this.profit,
+    required this.totalQuantity,
   });
 
   @override
   Widget build(BuildContext context) {
-    double grandTotal = 0;
-    for (var item in items) {
-      final total = itemTotals[item['id'] as int] ?? 0;
-      final price = item['avg_unit_price'] as double;
-      grandTotal += total * price;
-    }
+    final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: AppRadius.lgRadius,
-        boxShadow: AppShadows.md,
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.2),
-                  borderRadius: AppRadius.mdRadius,
-                ),
-                child: const Icon(
-                  Icons.receipt_long,
-                  color: AppColors.surface,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Genel Toplam',
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.surface.withOpacity(0.9),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '${items.length} Ürün',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.surface.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
+              _buildStat(theme, 'Toplam Adet', totalQuantity.toString()),
+              _buildStat(theme, 'Toplam Ciro', '${totalRevenue.toStringAsFixed(2)} ₺', theme.colorScheme.primary),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStat(theme, 'Toplam Maliyet', '${totalCost.toStringAsFixed(2)} ₺', theme.colorScheme.error),
+              _buildStat(theme, 'Kar', '${profit.toStringAsFixed(2)} ₺', profit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStat(ThemeData theme, String label, String value, [Color? valueColor]) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            '₺${grandTotal.toStringAsFixed(2)}',
-            style: AppTextStyles.heading1.copyWith(
-              color: AppColors.surface,
-              fontSize: 32,
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: valueColor ?? theme.colorScheme.onSurface,
             ),
           ),
         ],

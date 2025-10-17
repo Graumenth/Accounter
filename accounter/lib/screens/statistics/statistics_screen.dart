@@ -135,20 +135,25 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           PeriodSelector(
             selectedPeriod: selectedPeriod,
             onPeriodChanged: updateDateRange,
+            todayLabel: l10n.today,
+            thisWeekLabel: l10n.thisWeek,
+            thisMonthLabel: l10n.thisMonth,
+            thisYearLabel: l10n.thisYear,
+            selectDateLabel: l10n.selectDate,
           ),
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : statistics == null
                 ? Center(child: Text(l10n.noData))
-                : _buildStatisticsContent(),
+                : _buildStatisticsContent(l10n),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsContent() {
+  Widget _buildStatisticsContent(AppLocalizations l10n) {
     final total = statistics!['total'] as Map<String, dynamic>;
     final companies = statistics!['companies'] as List<Map<String, dynamic>>;
     final items = statistics!['items'] as List<Map<String, dynamic>>;
@@ -157,51 +162,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        SummaryCards(total: total),
-        const SizedBox(height: 24),
-        if (companies.isNotEmpty) ...[
-          const Text(
-            '🏢 Şirketlere Göre Satışlar',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
-            ),
+        SummaryCards(
+          total: total,
+          totalLabel: l10n.total,
+          salesLabel: l10n.sales,
+          quantityLabel: l10n.quantity,
+        ),
+        const SizedBox(height: 16),
+        CompanyStats(
+          companies: companies,
+          companiesLabel: l10n.companies,
+          noDataLabel: l10n.noData,
+        ),
+        const SizedBox(height: 16),
+        ItemStats(
+          items: items,
+          itemsLabel: l10n.items,
+          noDataLabel: l10n.noData,
+        ),
+        const SizedBox(height: 16),
+        if (daily.isNotEmpty)
+          DailyChart(
+            daily: daily,
+            dailyLabel: l10n.date,
           ),
-          const SizedBox(height: 12),
-          CompanyStats(
-            companies: companies,
-            startDate: startDate,
-            endDate: endDate,
-          ),
-        ],
-        const SizedBox(height: 24),
-        if (items.isNotEmpty) ...[
-          const Text(
-            '🎯 Ürünlere Göre Satışlar',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ItemStats(items: items),
-        ],
-        const SizedBox(height: 24),
-        if (daily.isNotEmpty && selectedPeriod != 'today') ...[
-          const Text(
-            '📈 Günlük Dağılım',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
-            ),
-          ),
-          const SizedBox(height: 12),
-          DailyChart(daily: daily),
-        ],
-        const SizedBox(height: 80),
       ],
     );
   }
