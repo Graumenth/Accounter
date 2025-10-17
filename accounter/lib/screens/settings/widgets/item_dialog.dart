@@ -157,7 +157,7 @@ Future<dynamic> showItemDialog(
               Navigator.pop(context, {
                 'name': nameController.text.trim(),
                 'priceCents': (price * 100).toInt(),
-                'color': '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}',
+                'color': '#${selectedColor.toARGB32().toRadixString(16).substring(2).padLeft(6, '0')}',
               });
             },
             style: ElevatedButton.styleFrom(

@@ -204,7 +204,7 @@ Future<String?> showProfileDialog(
                       });
                       MyApp.of(context)?.toggleTheme(value);
                     },
-                    activeColor: isDark ? AppColors.darkPrimary : AppColors.primary,
+                    activeTrackColor: isDark ? AppColors.darkPrimary : AppColors.primary,
                   ),
                 ],
               ),
