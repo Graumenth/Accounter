@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '../../../main.dart';
 
 class ProfileManager {
   static const String _keyCompanyName = 'company_name';
@@ -64,11 +65,17 @@ Future<String?> showProfileDialog(
       required String removeLogoLabel,
       required String cancelLabel,
       required String saveLabel,
+      required String darkModeLabel,
+      required String languageLabel,
     }) async {
   final currentName = await ProfileManager.getCompanyName();
   final currentLogo = await ProfileManager.getCompanyLogo();
   final controller = TextEditingController(text: currentName);
   String? logoPath = currentLogo;
+
+  final prefs = await SharedPreferences.getInstance();
+  bool isDarkMode = prefs.getBool('theme_mode') ?? false;
+  String currentLocale = prefs.getString('locale') ?? 'tr';
 
   return await showDialog<String>(
     context: context,
@@ -78,6 +85,7 @@ Future<String?> showProfileDialog(
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
                 controller: controller,
@@ -146,6 +154,86 @@ Future<String?> showProfileDialog(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   label: Text(removeLogoLabel, style: const TextStyle(color: Colors.red)),
                 ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    darkModeLabel,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Switch(
+                    value: isDarkMode,
+                    onChanged: (value) {
+                      setState(() {
+                        isDarkMode = value;
+                      });
+                      MyApp.of(context)?.toggleTheme(value);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                languageLabel,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          currentLocale = 'tr';
+                        });
+                        MyApp.of(context)?.setLocale('tr');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: currentLocale == 'tr'
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            : null,
+                        side: BorderSide(
+                          color: currentLocale == 'tr'
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                      child: const Text('Türkçe'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          currentLocale = 'en';
+                        });
+                        MyApp.of(context)?.setLocale('en');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: currentLocale == 'en'
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            : null,
+                        side: BorderSide(
+                          color: currentLocale == 'en'
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                        ),
+                      ),
+                      child: const Text('English'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../models/item.dart';
 import '../../../constants/app_colors.dart';
+import '/l10n/app_localizations.dart';
 
 class SalesList extends StatelessWidget {
   final bool isLoading;
@@ -16,17 +17,19 @@ class SalesList extends StatelessWidget {
     required this.isLoading,
     required this.sales,
     required this.onUpdateQuantity,
+    this.onAddItem,
     required this.noSalesText,
     required this.dragItemText,
-    this.onAddItem,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (isLoading) {
-      return const Center(
+      return Center(
         child: CircularProgressIndicator(
-          color: AppColors.primary,
+          color: isDark ? AppColors.darkPrimary : AppColors.primary,
         ),
       );
     }
@@ -45,47 +48,78 @@ class SalesList extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         return Container(
           color: candidateData.isNotEmpty
-              ? AppColors.primary.withOpacity(0.1)
-              : AppColors.background,
+              ? (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1)
+              : (isDark ? AppColors.darkBackground : AppColors.background),
           child: sales.isEmpty
               ? Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.shopping_bag_outlined,
+                  Icons.inbox_outlined,
                   size: 64,
-                  color: Colors.grey[400],
+                  color: isDark ? AppColors.darkTextTertiary : AppColors.textDisabled,
                 ),
-                SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.lg),
                 Text(
                   noSalesText,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
-                if (onAddItem != null) ...[
-                  SizedBox(height: AppSpacing.sm),
-                  Text(
-                    dragItemText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
               ],
             ),
           )
               : ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.only(bottom: 100),
             itemCount: sales.length,
             itemBuilder: (context, index) {
-              final sale = sales[index];
-              return _SaleCard(
-                sale: sale,
-                onUpdateQuantity: onUpdateQuantity,
+              return Dismissible(
+                key: Key(sales[index]['id'].toString()),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  color: isDark ? AppColors.darkError : AppColors.error,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: AppSpacing.xl),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.surface,
+                    size: 28,
+                  ),
+                ),
+                confirmDismiss: (direction) async {
+                  final l10n = AppLocalizations.of(context)!;
+                  return await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(l10n.deleteSale),
+                        content: Text(l10n.deleteSaleConfirm),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text(l10n.cancel),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isDark ? AppColors.darkError : AppColors.error,
+                            ),
+                            child: Text(l10n.delete),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                onDismissed: (direction) {
+                  onUpdateQuantity(sales[index]['id'], 0);
+                },
+                child: _SaleItem(
+                  sale: sales[index],
+                  onUpdateQuantity: onUpdateQuantity,
+                  isDark: isDark,
+                ),
               );
             },
           ),
@@ -95,141 +129,290 @@ class SalesList extends StatelessWidget {
   }
 }
 
-class _SaleCard extends StatelessWidget {
+class _SaleItem extends StatelessWidget {
   final Map<String, dynamic> sale;
   final Function(int, int) onUpdateQuantity;
+  final bool isDark;
 
-  const _SaleCard({
+  const _SaleItem({
     required this.sale,
     required this.onUpdateQuantity,
+    required this.isDark,
   });
+
+  void _showQuantityPicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentQuantity = sale['quantity'] as int;
+    int selectedQuantity = currentQuantity;
+    final textController = TextEditingController(text: currentQuantity.toString());
+    final focusNode = FocusNode();
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+            final isKeyboardVisible = keyboardHeight > 0;
+
+            focusNode.addListener(() {
+              setState(() {});
+            });
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: keyboardHeight),
+              child: Material(
+                child: Container(
+                  color: isDark ? AppColors.darkSurface : AppColors.surface,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              child: Text(
+                                l10n.cancel,
+                                style: TextStyle(
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              onPressed: () {
+                                focusNode.dispose();
+                                Navigator.pop(context);
+                              },
+                            ),
+                            Text(
+                              l10n.quantity,
+                              style: AppTextStyles.heading3.copyWith(
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              ),
+                            ),
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              child: Text(
+                                l10n.save,
+                                style: AppTextStyles.button.copyWith(
+                                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                                ),
+                              ),
+                              onPressed: () {
+                                final manualQuantity = int.tryParse(textController.text);
+                                final finalQuantity = manualQuantity ?? selectedQuantity;
+                                if (finalQuantity > 0 && finalQuantity <= 100) {
+                                  onUpdateQuantity(sale['id'], finalQuantity);
+                                  focusNode.dispose();
+                                  Navigator.pop(context);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: TextField(
+                          controller: textController,
+                          focusNode: focusNode,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.priceLarge.copyWith(
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          ),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: AppRadius.mdRadius,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: AppRadius.mdRadius,
+                              borderSide: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: AppRadius.mdRadius,
+                              borderSide: BorderSide(color: isDark ? AppColors.darkPrimary : AppColors.primary, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          ),
+                          onChanged: (value) {
+                            final newValue = int.tryParse(value);
+                            if (newValue != null && newValue > 0 && newValue <= 100) {
+                              selectedQuantity = newValue;
+                            }
+                          },
+                        ),
+                      ),
+                      if (!isKeyboardVisible)
+                        Container(
+                          height: 200,
+                          child: CupertinoPicker(
+                            scrollController: FixedExtentScrollController(
+                              initialItem: currentQuantity - 1,
+                            ),
+                            itemExtent: 40,
+                            onSelectedItemChanged: (int index) {
+                              selectedQuantity = index + 1;
+                              textController.text = selectedQuantity.toString();
+                            },
+                            children: List.generate(
+                              100,
+                                  (index) => Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: AppTextStyles.priceLarge.copyWith(
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final itemColor = Color(int.parse(sale['itemColor'].toString().replaceFirst('#', '0xFF')));
-    final companyColor = Color(int.parse(sale['companyColor'].toString().replaceFirst('#', '0xFF')));
-    final saleId = sale['id'] as int;
+    final l10n = AppLocalizations.of(context)!;
     final quantity = sale['quantity'] as int;
     final unitPrice = sale['unit_price'] as double;
-    final totalPrice = quantity * unitPrice;
+    final itemTotal = quantity * unitPrice;
+    final itemColor = sale['itemColor'] != null
+        ? Color(int.parse('0xFF${sale['itemColor'].toString().substring(1)}'))
+        : (isDark ? AppColors.darkPrimary : AppColors.primary);
+
+    final isTabletOrDesktop = MediaQuery.of(context).size.width >= 600;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.mdRadius,
-        border: Border.all(color: AppColors.border),
+      margin: const EdgeInsets.only(bottom: 1),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTabletOrDesktop ? AppSpacing.xxl : AppSpacing.xl,
+        vertical: AppSpacing.lg,
       ),
+      color: isDark ? AppColors.darkSurface : AppColors.surface,
       child: Row(
         children: [
           Container(
             width: 4,
-            height: 80,
+            height: 44,
             decoration: BoxDecoration(
               color: itemColor,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
           ),
+          SizedBox(width: isTabletOrDesktop ? AppSpacing.lg : AppSpacing.md),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          sale['itemName'],
-                          style: AppTextStyles.bodyLarge,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: companyColor.withOpacity(0.1),
-                          borderRadius: AppRadius.smRadius,
-                          border: Border.all(color: companyColor.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          sale['companyName'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: companyColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.xs),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${unitPrice.toStringAsFixed(2)} ₺',
-                        style: AppTextStyles.caption,
-                      ),
-                      Text(
-                        '${totalPrice.toStringAsFixed(2)} ₺',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 100,
-            height: 80,
-            decoration: const BoxDecoration(
-              color: AppColors.backgroundSecondary,
-              borderRadius: BorderRadius.only(
-                topRight: Radius.circular(8),
-                bottomRight: Radius.circular(8),
-              ),
-            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () => onUpdateQuantity(saleId, quantity + 1),
-                  child: const Icon(
-                    Icons.add_circle,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
-                ),
                 Text(
-                  quantity.toString(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                  sale['itemName'],
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                 ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () => onUpdateQuantity(saleId, quantity - 1),
-                  child: Icon(
-                    quantity > 1 ? Icons.remove_circle : Icons.delete,
-                    color: quantity > 1 ? AppColors.warning : AppColors.error,
-                    size: 24,
+                SizedBox(height: AppSpacing.xs),
+                Text(
+                  sale['companyName'],
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
               ],
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                onPressed: () async {
+                  if (quantity == 1) {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(l10n.deleteSale),
+                          content: Text(l10n.deleteSaleConfirm),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text(l10n.cancel),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isDark ? AppColors.darkError : AppColors.error,
+                              ),
+                              child: Text(l10n.delete),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (confirm == true) {
+                      onUpdateQuantity(sale['id'], 0);
+                    }
+                  } else {
+                    onUpdateQuantity(sale['id'], quantity - 1);
+                  }
+                },
+                color: isDark ? AppColors.darkError : AppColors.error,
+                iconSize: isTabletOrDesktop ? 28 : 24,
+              ),
+              GestureDetector(
+                onTap: () => _showQuantityPicker(context),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTabletOrDesktop ? AppSpacing.lg : AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant,
+                    borderRadius: AppRadius.mdRadius,
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                  ),
+                  child: Text(
+                    '$quantity',
+                    style: AppTextStyles.price.copyWith(
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                onPressed: () => onUpdateQuantity(sale['id'], quantity + 1),
+                color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                iconSize: isTabletOrDesktop ? 28 : 24,
+              ),
+            ],
+          ),
+          SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            width: isTabletOrDesktop ? 110 : 90,
+            child: Text(
+              '${itemTotal.toStringAsFixed(2)} ₺',
+              textAlign: TextAlign.right,
+              style: AppTextStyles.price.copyWith(
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
             ),
           ),
         ],

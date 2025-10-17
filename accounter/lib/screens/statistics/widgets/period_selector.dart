@@ -16,50 +16,49 @@ class PeriodSelector extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.all(16),
-      child: Column(
+      color: Colors.white,
+      child: Row(
         children: [
-          Row(
-            children: [
-              _buildPeriodButton(l10n.today, 'today'),
-              const SizedBox(width: 8),
-              _buildPeriodButton(l10n.thisWeek, 'week'),
-              const SizedBox(width: 8),
-              _buildPeriodButton(l10n.thisMonth, 'month'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildPeriodButton(l10n.thisYear, 'year'),
-              const SizedBox(width: 8),
-              _buildPeriodButton(l10n.selectDate, 'custom', icon: Icons.calendar_today),
-            ],
-          ),
+          _buildButton(l10n.today, 'today'),
+          const SizedBox(width: 8),
+          _buildButton(l10n.thisWeek, 'week'),
+          const SizedBox(width: 8),
+          _buildButton(l10n.thisMonth, 'month'),
+          const SizedBox(width: 8),
+          _buildButton(l10n.thisYear, 'year'),
+          const SizedBox(width: 8),
+          _buildButton(l10n.selectDate, 'custom'),
         ],
       ),
     );
   }
 
-  Widget _buildPeriodButton(String label, String period, {IconData? icon}) {
+  Widget _buildButton(String label, String period) {
     final isSelected = selectedPeriod == period;
     return Expanded(
-      child: ElevatedButton.icon(
-        onPressed: () => onPeriodChanged(period),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? const Color(0xFF38A169) : Colors.white,
-          foregroundColor: isSelected ? Colors.white : const Color(0xFF4A5568),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
+      child: GestureDetector(
+        onTap: () => onPeriodChanged(period),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF38A169) : const Color(0xFFF7FAFC),
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isSelected ? const Color(0xFF38A169) : Colors.grey[300]!,
+            border: Border.all(
+              color: isSelected ? const Color(0xFF38A169) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF4A5568),
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
             ),
           ),
         ),
-        icon: icon != null ? Icon(icon, size: 18) : const SizedBox.shrink(),
-        label: Text(label, style: const TextStyle(fontSize: 13)),
       ),
     );
   }

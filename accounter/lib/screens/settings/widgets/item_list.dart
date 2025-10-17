@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/item.dart';
-import '../../../l10n/app_localizations.dart';
+import '/l10n/app_localizations.dart';
 
 class ItemList extends StatelessWidget {
   final List<Item> items;
@@ -15,23 +15,22 @@ class ItemList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     if (items.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.inventory_2_outlined,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: Color(0xFFD1D5DB),
             ),
             const SizedBox(height: 16),
             Text(
               l10n.noItemsYet,
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              style: const TextStyle(
+                color: Color(0xFF9CA3AF),
               ),
             ),
           ],
@@ -41,10 +40,7 @@ class ItemList extends StatelessWidget {
 
     return ListView.separated(
       itemCount: items.length,
-      separatorBuilder: (context, index) => Divider(
-        height: 1,
-        color: theme.dividerColor,
-      ),
+      separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final item = items[index];
         final itemColor = Color(int.parse('0xFF${item.color.substring(1)}'));
@@ -59,22 +55,16 @@ class ItemList extends StatelessWidget {
           ),
           title: Text(
             item.name,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
             ),
           ),
           subtitle: Text(
             '${item.basePriceTL.toStringAsFixed(2)} ₺',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
+            style: const TextStyle(color: Color(0xFF9CA3AF)),
           ),
-          trailing: Icon(
-            Icons.chevron_right,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
-          ),
+          trailing: const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
           onTap: () => onEdit(item),
         );
       },

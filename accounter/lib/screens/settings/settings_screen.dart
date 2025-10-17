@@ -7,6 +7,7 @@ import '/l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../models/company.dart';
 import '../../models/item.dart';
+import '../../main.dart';
 import 'widgets/company_list.dart';
 import 'widgets/item_list.dart';
 import 'widgets/company_dialog.dart';
@@ -117,7 +118,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
               child: Text(l10n.delete),
             ),
           ],
@@ -190,7 +193,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
               child: Text(l10n.delete),
             ),
           ],
@@ -219,26 +224,26 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.settings,
-          style: const TextStyle(
-            color: Color(0xFF1A202C),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF38A169),
-          unselectedLabelColor: const Color(0xFF4A5568),
-          indicatorColor: const Color(0xFF38A169),
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          indicatorColor: Theme.of(context).colorScheme.primary,
           tabs: [
             Tab(text: l10n.companies),
             Tab(text: l10n.items),
@@ -246,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person, color: Color(0xFF38A169)),
+            icon: Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
             tooltip: l10n.companyInfo,
             onPressed: () async {
               final name = await showProfileDialog(
@@ -259,6 +264,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 removeLogoLabel: l10n.removeLogo,
                 cancelLabel: l10n.cancel,
                 saveLabel: l10n.save,
+                darkModeLabel: l10n.darkMode,
+                languageLabel: l10n.language,
               );
               if (name != null) {
                 await ProfileManager.setCompanyName(name);
@@ -271,14 +278,14 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             },
           ),
           IconButton(
-            icon: const Icon(Icons.backup, color: Color(0xFF38A169)),
+            icon: Icon(Icons.backup, color: Theme.of(context).colorScheme.primary),
             tooltip: l10n.backupDatabase,
             onPressed: () => backupDatabase(context),
           ),
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
           : TabBarView(
         controller: _tabController,
         children: [
@@ -300,7 +307,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             handleAddItem(context);
           }
         },
-        backgroundColor: const Color(0xFF38A169),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add),
       ),
     );

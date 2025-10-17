@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
 
 class DateSelector extends StatefulWidget {
   final DateTime selectedDate;
@@ -22,12 +24,14 @@ class _DateSelectorState extends State<DateSelector> {
     viewportFraction: 0.33,
   );
   int _currentPage = 500;
-  late final DateTime todayMidnight;
+  late DateTime todayMidnight;
+  Timer? _midnightTimer;
 
   @override
   void initState() {
     super.initState();
-    todayMidnight = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    _updateTodayMidnight();
+    _setupMidnightTimer();
     _pageController.addListener(() {
       final page = _pageController.page?.round() ?? _currentPage;
       if (page != _currentPage) {
@@ -40,8 +44,29 @@ class _DateSelectorState extends State<DateSelector> {
     });
   }
 
+  void _updateTodayMidnight() {
+    final now = DateTime.now();
+    todayMidnight = DateTime(now.year, now.month, now.day);
+  }
+
+  void _setupMidnightTimer() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    final timeUntilMidnight = tomorrow.difference(now);
+
+    _midnightTimer = Timer(timeUntilMidnight, () {
+      if (mounted) {
+        setState(() {
+          _updateTodayMidnight();
+        });
+        _setupMidnightTimer();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _midnightTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -52,7 +77,7 @@ class _DateSelectorState extends State<DateSelector> {
         date1.day == date2.day;
   }
 
-  String getDateLabel(BuildContext context, DateTime date) {
+  String getDateLabel(DateTime date) {
     final l10n = AppLocalizations.of(context)!;
 
     if (isSameDay(date, todayMidnight)) {
@@ -67,6 +92,8 @@ class _DateSelectorState extends State<DateSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth - 96;
@@ -76,53 +103,153 @@ class _DateSelectorState extends State<DateSelector> {
           children: [
             Container(
               height: 2,
-              color: const Color(0xFFE2E8F0),
+              color: isDark ? AppColors.darkDivider : AppColors.divider,
             ),
             SizedBox(
-              height: 64,
-              child: PageView.builder(
-                controller: _pageController,
-                itemBuilder: (context, index) {
-                  final date = todayMidnight.add(Duration(days: index - 500));
-                  final isSelected = isSameDay(date, widget.selectedDate);
-                  return SizedBox(
-                    width: itemWidth,
+              height: 56,
+              child: Stack(
+                children: [
+                  Positioned.fill(
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF38A169) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            DateFormat('EEE', 'tr_TR').format(date).toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected ? Colors.white : const Color(0xFF718096),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            getDateLabel(context, date),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : const Color(0xFF1A202C),
-                            ),
-                          ),
-                        ],
+                      color: isDark ? AppColors.darkSurface : AppColors.surface,
+                    ),
+                  ),
+                  Positioned(
+                    left: 48,
+                    right: 48,
+                    top: 8,
+                    bottom: 8,
+                    child: Center(
+                      child: Container(
+                        width: itemWidth,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkBackgroundSecondary : AppColors.backgroundSecondary,
+                          borderRadius: AppRadius.mdRadius,
+                        ),
                       ),
                     ),
-                  );
-                },
+                  ),
+                  Positioned(
+                    left: 48,
+                    right: 48,
+                    top: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onVerticalDragEnd: (details) {
+                        final velocity = details.velocity.pixelsPerSecond;
+                        if (velocity.dy.abs() > 1000 && velocity.dy.abs() > velocity.dx.abs() * 2) {
+                          final selectedMidnight = DateTime(
+                            widget.selectedDate.year,
+                            widget.selectedDate.month,
+                            widget.selectedDate.day,
+                          );
+                          final difference = selectedMidnight.difference(todayMidnight).inDays;
+                          if (difference != 0) {
+                            _pageController.animateToPage(
+                              _currentPage - difference,
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        }
+                      },
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: 1000,
+                        itemBuilder: (context, index) {
+                          final dayOffset = index - 500;
+                          final date = todayMidnight.add(Duration(days: dayOffset));
+
+                          return AnimatedBuilder(
+                            animation: _pageController,
+                            builder: (context, child) {
+                              double value = 1.0;
+                              if (_pageController.position.haveDimensions) {
+                                value = (_pageController.page ?? _currentPage.toDouble()) - index;
+                                value = (1 - (value.abs() * 0.3)).clamp(0.7, 1.0);
+                              }
+                              final isCenter = value > 0.95;
+                              return Center(
+                                child: Semantics(
+                                  label: getDateLabel(date),
+                                  selected: isCenter,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _pageController.animateToPage(
+                                        index,
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                    child: Transform.scale(
+                                      scale: value,
+                                      child: Opacity(
+                                        opacity: (0.3 + (value * 0.7)).clamp(0.3, 1.0),
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            getDateLabel(date),
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: isCenter ? FontWeight.w600 : FontWeight.w400,
+                                              color: isCenter
+                                                  ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)
+                                                  : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 48,
+                    child: IconButton(
+                      tooltip: 'Önceki gün',
+                      icon: const Icon(Icons.chevron_left, size: 24),
+                      onPressed: () {
+                        _pageController.previousPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 48,
+                    child: IconButton(
+                      tooltip: 'Sonraki gün',
+                      icon: const Icon(Icons.chevron_right, size: 24),
+                      onPressed: () {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
               height: 2,
-              color: const Color(0xFFE2E8F0),
+              color: isDark ? AppColors.darkDivider : AppColors.divider,
             ),
           ],
         );

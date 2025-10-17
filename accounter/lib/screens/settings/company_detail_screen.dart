@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/company.dart';
 import '../../models/company_item_price.dart';
 import '../../services/database_service.dart';
-import '../../l10n/app_localizations.dart';
+import '/l10n/app_localizations.dart';
 
 class CompanyDetailScreen extends StatefulWidget {
   final Company company;
@@ -34,7 +34,6 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
 
   Future<void> showPriceDialog(Map<String, dynamic> item) async {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final hasCustomPrice = item['custom_price_cents'] != null;
     final currentPrice = hasCustomPrice
         ? (item['custom_price_cents'] as int) / 100
@@ -47,10 +46,10 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
         title: Text(
           '${item['name']} - ${l10n.customPrice}',
-          style: TextStyle(color: theme.colorScheme.onSurface),
+          style: const TextStyle(color: Color(0xFF1A202C)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -58,8 +57,8 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           children: [
             Text(
               '${l10n.basePrice}: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              style: const TextStyle(
+                color: Color(0xFF9CA3AF),
                 fontSize: 14,
               ),
             ),
@@ -70,12 +69,8 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                 labelText: '${l10n.customPrice} (TL)',
                 border: const OutlineInputBorder(),
                 prefixText: '₺ ',
-                labelStyle: TextStyle(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                ),
               ),
-              style: TextStyle(color: theme.colorScheme.onSurface),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
             ),
           ],
@@ -83,30 +78,20 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         actions: [
           if (hasCustomPrice)
             TextButton(
-              onPressed: () => Navigator.pop(context, 'delete'),
+              onPressed: () => Navigator.pop(context, 'reset'),
               child: Text(
                 l10n.returnToDefault,
-                style: TextStyle(color: theme.colorScheme.error),
+                style: const TextStyle(color: Color(0xFFE53E3E)),
               ),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              l10n.cancel,
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Navigator.pop(context, controller.text.trim());
-              }
-            },
+            onPressed: () => Navigator.pop(context, controller.text),
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
+              backgroundColor: const Color(0xFF38A169),
             ),
             child: Text(l10n.save),
           ),
@@ -114,36 +99,33 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
       ),
     );
 
-    if (result == 'delete') {
+    if (!mounted) return;
+
+    if (result == 'reset') {
       await DatabaseService.instance.deleteCompanyItemPrice(
         widget.company.id!,
-        item['id'],
+        item['item_id'] as int,
       );
-      loadItems();
+      await loadItems();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.returnedToDefault),
-            backgroundColor: theme.colorScheme.primary,
-          ),
+          SnackBar(content: Text(l10n.returnedToDefault)),
         );
       }
     } else if (result != null && result.isNotEmpty) {
       final price = double.tryParse(result);
-      if (price != null) {
-        final companyItemPrice = CompanyItemPrice(
-          companyId: widget.company.id!,
-          itemId: item['id'],
-          customPriceCents: (price * 100).toInt(),
+      if (price != null && price > 0) {
+        await DatabaseService.instance.setCompanyItemPrice(
+          CompanyItemPrice(
+            companyId: widget.company.id!,
+            itemId: item['item_id'] as int,
+            customPriceCents: (price * 100).round(),
+          ),
         );
-        await DatabaseService.instance.setCompanyItemPrice(companyItemPrice);
-        loadItems();
+        await loadItems();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.customPriceSaved),
-              backgroundColor: theme.colorScheme.primary,
-            ),
+            SnackBar(content: Text(l10n.customPriceSaved)),
           );
         }
       }
@@ -153,37 +135,36 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.company.name,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
+          style: const TextStyle(
+            color: Color(0xFF1A202C),
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
       body: isLoading
-          ? Center(
+          ? const Center(
         child: CircularProgressIndicator(
-          color: theme.colorScheme.primary,
+          color: Color(0xFF38A169),
         ),
       )
           : itemsWithPrices.isEmpty
           ? Center(
         child: Text(
           l10n.noItemsYet,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+          style: const TextStyle(
+            color: Color(0xFF9CA3AF),
           ),
         ),
       )
@@ -200,7 +181,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               : (item['base_price_cents'] as int) / 100;
 
           return Card(
-            color: theme.colorScheme.surface,
+            color: Colors.white,
             child: ListTile(
               leading: Container(
                 width: 12,
@@ -212,10 +193,10 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               ),
               title: Text(
                 item['name'],
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
+                  color: Color(0xFF1A202C),
                 ),
               ),
               subtitle: Column(
@@ -226,8 +207,8 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                     '${displayPrice.toStringAsFixed(2)} ₺',
                     style: TextStyle(
                       color: hasCustomPrice
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface.withOpacity(0.7),
+                          ? const Color(0xFF38A169)
+                          : const Color(0xFF9CA3AF),
                       fontWeight: hasCustomPrice ? FontWeight.w600 : FontWeight.normal,
                       fontSize: hasCustomPrice ? 16 : 14,
                     ),
@@ -244,22 +225,22 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        color: const Color(0xFF38A169).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         l10n.custom,
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
+                        style: const TextStyle(
+                          color: Color(0xFF38A169),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   const SizedBox(width: 8),
-                  Icon(
+                  const Icon(
                     Icons.chevron_right,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: Color(0xFF9CA3AF),
                   ),
                 ],
               ),

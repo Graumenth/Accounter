@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '/l10n/app_localizations.dart';
 import '../../models/company.dart';
 import '../../models/item.dart';
 import '../../models/sale.dart';
 import '../../services/database_service.dart';
+import '/l10n/app_localizations.dart';
 import 'widgets/app_header.dart';
 import 'widgets/date_selector.dart';
 import 'widgets/category_tabs.dart';
@@ -21,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime selectedDate = DateTime.now();
   DateTime _lastCheckedDate = DateTime.now();
+  DateTime _lastCheckTime = DateTime.now();
   List<Map<String, dynamic>> sales = [];
   List<Map<String, dynamic>> filteredSales = [];
   List<Company> companies = [];
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _lastCheckedDate = DateTime.now();
+    _lastCheckTime = DateTime.now();
     loadData();
   }
 
@@ -56,6 +58,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _checkAndUpdateDate() {
     final now = DateTime.now();
+
+    if (now.difference(_lastCheckTime).inSeconds < 60) {
+      return;
+    }
+
+    _lastCheckTime = now;
+
     final lastDate = DateTime(_lastCheckedDate.year, _lastCheckedDate.month, _lastCheckedDate.day);
     final todayDate = DateTime(now.year, now.month, now.day);
 
@@ -138,10 +147,120 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void onCompanyChanged(Company? company) {
-    setState(() => selectedCompany = company);
+    setState(() {
+      selectedCompany = company;
+    });
+  }
+
+  Future<void> addSaleFromGrid(Item item) async {
+    _checkAndUpdateDate();
+    if (selectedCompany == null) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final dateStr = Sale.dateToString(selectedDate);
+
+    final isDuplicate = await DatabaseService.instance.checkDuplicateSale(
+      item.id!,
+      selectedCompany!.id!,
+      dateStr,
+    );
+
+    if (isDuplicate) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.alreadyAdded),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
+      selectedCompany!.id!,
+      item.id!,
+    );
+
+    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
+
+    final sale = Sale(
+      itemId: item.id!,
+      date: dateStr,
+      companyId: selectedCompany!.id!,
+      quantity: 1,
+      unitPrice: unitPrice,
+    );
+
+    await DatabaseService.instance.insertSale(sale);
+    await loadDailySales();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name} eklendi'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  Future<void> addSale(Item item, int companyId) async {
+    _checkAndUpdateDate();
+
+    final l10n = AppLocalizations.of(context)!;
+    final dateStr = Sale.dateToString(selectedDate);
+
+    final isDuplicate = await DatabaseService.instance.checkDuplicateSale(
+      item.id!,
+      companyId,
+      dateStr,
+    );
+
+    if (isDuplicate) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.alreadyAdded),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
+      companyId,
+      item.id!,
+    );
+
+    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
+
+    final sale = Sale(
+      itemId: item.id!,
+      date: dateStr,
+      companyId: companyId,
+      quantity: 1,
+      unitPrice: unitPrice,
+    );
+
+    await DatabaseService.instance.insertSale(sale);
+    await loadDailySales();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name} eklendi'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Future<void> updateSaleQuantity(int saleId, int newQuantity) async {
+    _checkAndUpdateDate();
     if (newQuantity <= 0) {
       await DatabaseService.instance.deleteSale(saleId);
     } else {
@@ -150,44 +269,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await loadDailySales();
   }
 
-  Future<void> addSale(Item item, int companyId) async {
-    final customPrice = await DatabaseService.instance.getCompanyItemPrice(companyId, item.id!);
-    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
-
-    final sale = Sale(
-      itemId: item.id!,
-      companyId: companyId,
-      quantity: 1,
-      unitPrice: unitPrice,
-      date: Sale.dateToString(selectedDate),
-    );
-
-    await DatabaseService.instance.insertSale(sale);
-    await loadDailySales();
-  }
-
-  Future<void> addSaleFromGrid(Item item) async {
-    if (selectedCompany == null) return;
-
-    final companyId = selectedCompanyFilter ?? selectedCompany!.id!;
-    await addSale(item, companyId);
-    setState(() => showItemGrid = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: isLoading
-          ? const Center(
-        child: CircularProgressIndicator(color: Color(0xFF38A169)),
+          ? Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
       )
           : Column(
         children: [
           AppHeader(
-            title: l10n.accounter,
             statisticsTooltip: l10n.statistics,
             settingsTooltip: l10n.settings,
             onSettingsChanged: () => loadData(),
@@ -195,9 +291,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           DateSelector(
             selectedDate: selectedDate,
             onDateChanged: changeDate,
-            todayLabel: l10n.today,
-            yesterdayLabel: l10n.yesterday,
-            tomorrowLabel: l10n.tomorrow,
           ),
           CategoryTabs(
             companies: companies,
@@ -225,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         _checkAndUpdateDate();
                         setState(() => showItemGrid = true);
                       },
-                      backgroundColor: const Color(0xFF38A169),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       icon: const Icon(Icons.add),
                       label: Text(l10n.addSale),
                     ),

@@ -202,16 +202,30 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getCompanyItemsWithPrices(int companyId) async {
     final db = await database;
     return await db.rawQuery('''
-      SELECT 
-        items.*,
-        company_item_prices.custom_price_cents,
-        company_item_prices.id as price_id
-      FROM items
-      LEFT JOIN company_item_prices 
-        ON items.id = company_item_prices.item_id 
-        AND company_item_prices.company_id = ?
-      ORDER BY items.name
-    ''', [companyId]);
+    SELECT 
+      items.id as item_id,
+      items.name,
+      items.base_price_cents,
+      items.color as item_color,
+      company_item_prices.custom_price_cents,
+      company_item_prices.id as price_id
+    FROM items
+    LEFT JOIN company_item_prices 
+      ON items.id = company_item_prices.item_id 
+      AND company_item_prices.company_id = ?
+    ORDER BY items.name
+  ''', [companyId]);
+  }
+
+  Future<bool> checkDuplicateSale(int itemId, int companyId, String date) async {
+    final db = await database;
+    final result = await db.query(
+      'sales',
+      where: 'item_id = ? AND company_id = ? AND date = ?',
+      whereArgs: [itemId, companyId, date],
+      limit: 1,
+    );
+    return result.isNotEmpty;
   }
 
   Future<int> insertSale(Sale sale) async {

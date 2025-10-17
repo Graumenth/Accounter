@@ -59,8 +59,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _showCustomDatePicker() async {
-    final theme = Theme.of(context);
-
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -70,7 +68,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: theme.colorScheme,
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF38A169),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1A202C),
+            ),
           ),
           child: child!,
         );
@@ -108,21 +110,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.statistics,
-          style: TextStyle(
-            color: theme.colorScheme.onSurface,
+          style: const TextStyle(
+            color: Color(0xFF1A202C),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -132,29 +133,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           PeriodSelector(
             selectedPeriod: selectedPeriod,
             onPeriodChanged: updateDateRange,
-            todayLabel: l10n.today,
-            thisWeekLabel: l10n.thisWeek,
-            thisMonthLabel: l10n.thisMonth,
-            thisYearLabel: l10n.thisYear,
-            selectDateLabel: l10n.selectDate,
           ),
           Expanded(
             child: isLoading
-                ? Center(
-              child: CircularProgressIndicator(
-                color: theme.colorScheme.primary,
-              ),
-            )
+                ? const Center(child: CircularProgressIndicator())
                 : statistics == null
                 ? Center(child: Text(l10n.noData))
-                : _buildStatisticsContent(l10n, theme),
+                : _buildStatisticsContent(l10n),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsContent(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildStatisticsContent(AppLocalizations l10n) {
     final total = statistics!['total'] as Map<String, dynamic>;
     final companies = statistics!['companies'] as List<Map<String, dynamic>>;
     final items = statistics!['items'] as List<Map<String, dynamic>>;
@@ -166,12 +158,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         SummaryCards(total: total),
         const SizedBox(height: 24),
         if (companies.isNotEmpty) ...[
-          Text(
-            '🏢 ${l10n.companySales}',
+          const Text(
+            '🏢 Şirketlere Göre Satışlar',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+              color: Color(0xFF1A202C),
             ),
           ),
           const SizedBox(height: 12),
@@ -183,12 +175,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ],
         const SizedBox(height: 24),
         if (items.isNotEmpty) ...[
-          Text(
-            '🎯 ${l10n.productSales}',
+          const Text(
+            '🎯 Ürünlere Göre Satışlar',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+              color: Color(0xFF1A202C),
             ),
           ),
           const SizedBox(height: 12),
@@ -196,12 +188,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ],
         const SizedBox(height: 24),
         if (daily.isNotEmpty && selectedPeriod != 'today') ...[
-          Text(
-            '📈 ${l10n.dailyDistribution}',
+          const Text(
+            '📈 Günlük Dağılım',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+              color: Color(0xFF1A202C),
             ),
           ),
           const SizedBox(height: 12),

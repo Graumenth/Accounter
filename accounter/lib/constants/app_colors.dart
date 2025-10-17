@@ -26,6 +26,25 @@ class AppColors {
 
   static const Color shadow = Color(0x0F000000);
   static const Color overlay = Color(0x33000000);
+
+  static const Color backgroundSecondary = Color(0xFFEDF2F7);
+
+  static const Color darkBackground = Color(0xFF2B2B2B);
+  static const Color darkSurface = Color(0xFF3C3F41);
+  static const Color darkSurfaceVariant = Color(0xFF4B4E50);
+  static const Color darkBackgroundSecondary = Color(0xFF353739);
+
+  static const Color darkTextPrimary = Color(0xFFBBBBBB);
+  static const Color darkTextSecondary = Color(0xFF808080);
+  static const Color darkTextTertiary = Color(0xFF5A5D5F);
+
+  static const Color darkPrimary = Color(0xFF2F855A);
+  static const Color darkPrimaryDark = Color(0xFF276749);
+  static const Color darkError = Color(0xFFC53030);
+  static const Color darkWarning = Color(0xFFDD6B20);
+
+  static const Color darkBorder = Color(0xFF323232);
+  static const Color darkDivider = Color(0xFF323232);
 }
 
 class AppTextStyles {
@@ -152,4 +171,80 @@ class AppShadows {
       offset: const Offset(0, 8),
     ),
   ];
+}
+
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: AppColors.background,
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primary,
+        secondary: AppColors.primaryDark,
+        error: AppColors.error,
+        surface: AppColors.surface,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: AppColors.textPrimary,
+        onError: Colors.white,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdRadius,
+        ),
+      ),
+      dividerColor: AppColors.divider,
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: AppColors.textPrimary),
+        bodyMedium: TextStyle(color: AppColors.textSecondary),
+        bodySmall: TextStyle(color: AppColors.textTertiary),
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      primaryColor: AppColors.darkPrimary,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.darkPrimary,
+        secondary: AppColors.darkPrimaryDark,
+        error: AppColors.darkError,
+        surface: AppColors.darkSurface,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: AppColors.darkTextPrimary,
+        onError: Colors.white,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: AppColors.darkTextPrimary,
+        elevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.darkSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdRadius,
+        ),
+      ),
+      dividerColor: AppColors.darkDivider,
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: AppColors.darkTextPrimary),
+        bodyMedium: TextStyle(color: AppColors.darkTextSecondary),
+        bodySmall: TextStyle(color: AppColors.darkTextTertiary),
+      ),
+    );
+  }
 }

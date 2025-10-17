@@ -1,72 +1,72 @@
 import 'package:flutter/material.dart';
+import '../../../constants/app_colors.dart';
 
 class ReportSummary extends StatelessWidget {
-  final double totalRevenue;
-  final double totalCost;
-  final double profit;
-  final int totalQuantity;
+  final List<Map<String, dynamic>> items;
+  final Map<int, int> itemTotals;
 
   const ReportSummary({
     super.key,
-    required this.totalRevenue,
-    required this.totalCost,
-    required this.profit,
-    required this.totalQuantity,
+    required this.items,
+    required this.itemTotals,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    int grandTotal = 0;
+    int totalQuantity = 0;
+
+    for (var item in items) {
+      final qty = itemTotals[item['id'] as int] ?? 0;
+      final price = item['avg_unit_price'] as double;
+      grandTotal += (qty * price * 100).toInt();
+      totalQuantity += qty;
+    }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surface,
+        borderRadius: AppRadius.lgRadius,
+        boxShadow: AppShadows.md,
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStat(theme, 'Toplam Adet', totalQuantity.toString()),
-              _buildStat(theme, 'Toplam Ciro', '${totalRevenue.toStringAsFixed(2)} ₺', theme.colorScheme.primary),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Toplam Adet',
+                    style: AppTextStyles.caption,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    totalQuantity.toString(),
+                    style: AppTextStyles.heading2,
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Genel Toplam',
+                    style: AppTextStyles.caption,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(grandTotal / 100).toStringAsFixed(2)} ₺',
+                    style: AppTextStyles.priceLarge.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 28,
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStat(theme, 'Toplam Maliyet', '${totalCost.toStringAsFixed(2)} ₺', theme.colorScheme.error),
-              _buildStat(theme, 'Kar', '${profit.toStringAsFixed(2)} ₺', profit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStat(ThemeData theme, String label, String value, [Color? valueColor]) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: valueColor ?? theme.colorScheme.onSurface,
-            ),
           ),
         ],
       ),

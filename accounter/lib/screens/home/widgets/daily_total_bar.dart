@@ -1,36 +1,47 @@
 import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
-import '../../../constants/app_text_styles.dart';
-import '../../../l10n/app_localizations.dart';
 
 class DailyTotalBar extends StatelessWidget {
   final int dailyTotal;
   final int? companyTotal;
   final String? companyName;
+  final String dailyTotalLabel;
+  final String grandTotalLabel;
 
   const DailyTotalBar({
     super.key,
     required this.dailyTotal,
     this.companyTotal,
     this.companyName,
+    required this.dailyTotalLabel,
+    required this.grandTotalLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const double barHeight = 128.0;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      height: barHeight,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: isDark ? AppColors.darkSurface : AppColors.surface,
         border: Border(
-          top: BorderSide(color: theme.dividerColor),
+          top: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.border,
+            width: 1,
+          ),
         ),
+        boxShadow: AppShadows.sm,
       ),
       child: SafeArea(
+        top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             companyTotal != null && companyName != null
                 ? Row(
@@ -41,73 +52,59 @@ class DailyTotalBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        l10n.companyTotal,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: AppSpacing.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.grandTotal,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        companyName!,
+                        style: AppTextStyles.caption.copyWith(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: AppSpacing.xs),
                       Text(
-                        '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.primary,
+                        '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
+                        style: AppTextStyles.heading2.copyWith(
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                     ],
                   ),
                 ),
+                SizedBox(width: AppSpacing.lg),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      grandTotalLabel,
+                      style: AppTextStyles.caption.copyWith(
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
+                      style: AppTextStyles.priceLarge.copyWith(
+                        color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             )
-                : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+                : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  l10n.dailyTotal,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  dailyTotalLabel,
+                  style: AppTextStyles.body.copyWith(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
-                SizedBox(height: AppSpacing.xs),
                 Text(
                   '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                  style: TextStyle(
+                  style: AppTextStyles.priceLarge.copyWith(
+                    color: isDark ? AppColors.darkPrimary : AppColors.primary,
                     fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],

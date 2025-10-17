@@ -63,5 +63,19 @@
   "storagePermissionRequired": "Storage permission required to share files! Please grant permission in settings.",
   "companySaved": "Company information saved",
   "dragItemHere": "Drag item here",
-  "custom": "Custom"
+  "custom": "Custom",
+  "companySales": "Company Sales",
+  "productSales": "Product Sales",
+  "dailyDistribution": "Daily Distribution",
+  "quantitySuffix": "pcs",
+  "noItemsYet": "No items yet",
+  "noCompaniesYet": "No companies yet",
+  "returnToDefault": "Return to Default",
+  "returnedToDefault": "Returned to default price",
+  "customPriceSaved": "Custom price saved",
+  "alreadyAdded": "This item is already added for today",
+  "darkMode": "Dark Mode",
+  "language": "Language",
+  "turkish": "Turkish",
+  "english": "English"
 }

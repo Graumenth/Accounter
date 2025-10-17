@@ -1,36 +1,38 @@
 import 'package:flutter/material.dart';
-import '/l10n/app_localizations.dart';
+import '../../../constants/app_colors.dart';
 import '../../../models/company.dart';
 
 class CategoryTabs extends StatelessWidget {
   final List<Company> companies;
   final int? selectedCompanyId;
   final Function(int?) onCompanySelected;
+  final String allLabel;
 
   const CategoryTabs({
     super.key,
     required this.companies,
     required this.selectedCompanyId,
     required this.onCompanySelected,
+    required this.allLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
         Container(
           height: 56,
-          color: Colors.white,
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
           child: companies.isEmpty
               ? Center(
             child: Text(
-              l10n.all,
-              style: const TextStyle(
+              allLabel,
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF38A169),
+                color: isDark ? AppColors.darkPrimary : AppColors.primary,
               ),
             ),
           )
@@ -38,23 +40,23 @@ class CategoryTabs extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             children: [
-              _buildTab(l10n.all, null, const Color(0xFF38A169)),
+              _buildTab(allLabel, null, isDark ? AppColors.darkPrimary : AppColors.primary, isDark),
               ...companies.map((company) {
                 final companyColor = Color(int.parse(company.color.replaceFirst('#', '0xFF')));
-                return _buildTab(company.name, company.id, companyColor);
+                return _buildTab(company.name, company.id, companyColor, isDark);
               }),
             ],
           ),
         ),
         Container(
           height: 2,
-          color: const Color(0xFFE2E8F0),
+          color: isDark ? AppColors.darkDivider : AppColors.divider,
         ),
       ],
     );
   }
 
-  Widget _buildTab(String label, int? companyId, Color color) {
+  Widget _buildTab(String label, int? companyId, Color color, bool isDark) {
     final isSelected = selectedCompanyId == companyId;
 
     return GestureDetector(
@@ -72,7 +74,9 @@ class CategoryTabs extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : const Color(0xFF4A5568),
+              color: isSelected
+                  ? AppColors.surface
+                  : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
             ),
           ),
         ),

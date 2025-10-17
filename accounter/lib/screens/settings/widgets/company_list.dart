@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/company.dart';
-import '../../../l10n/app_localizations.dart';
-import '../company_detail_screen.dart';
+import '/l10n/app_localizations.dart';
 
 class CompanyList extends StatelessWidget {
   final List<Company> companies;
@@ -16,23 +15,22 @@ class CompanyList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     if (companies.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.business_outlined,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: Color(0xFFD1D5DB),
             ),
             const SizedBox(height: 16),
             Text(
               l10n.noCompaniesYet,
-              style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              style: const TextStyle(
+                color: Color(0xFF9CA3AF),
               ),
             ),
           ],
@@ -42,54 +40,22 @@ class CompanyList extends StatelessWidget {
 
     return ListView.separated(
       itemCount: companies.length,
-      separatorBuilder: (context, index) => Divider(
-        height: 1,
-        color: theme.dividerColor,
-      ),
+      separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final company = companies[index];
-        final companyColor = Color(int.parse('0xFF${company.color.substring(1)}'));
-
         return ListTile(
-          leading: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: companyColor,
-              shape: BoxShape.circle,
-            ),
+          leading: const Icon(
+            Icons.business,
+            color: Color(0xFF38A169),
           ),
           title: Text(
             company.name,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface,
             ),
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.price_change,
-                  color: theme.colorScheme.primary,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CompanyDetailScreen(company: company),
-                    ),
-                  );
-                },
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-            ],
-          ),
+          trailing: const Icon(Icons.chevron_right, color: Color(0xFF4A5568)),
           onTap: () => onEdit(company),
         );
       },
