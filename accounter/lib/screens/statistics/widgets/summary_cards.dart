@@ -1,71 +1,109 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SummaryCards extends StatelessWidget {
-  final double totalRevenue;
-  final double totalCost;
-  final double totalProfit;
-  final int totalSales;
+  final Map<String, dynamic> total;
 
   const SummaryCards({
     super.key,
-    required this.totalRevenue,
-    required this.totalCost,
-    required this.totalProfit,
-    required this.totalSales,
+    required this.total,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final totalAmount = (total['totalAmount'] ?? 0) as int;
+    final totalQuantity = (total['totalQuantity'] ?? 0) as int;
+    final totalSales = (total['totalSales'] ?? 0) as int;
 
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      childAspectRatio: 1.5,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+    return Column(
       children: [
-        _buildCard(theme, 'Toplam Satış', totalSales.toString(), Icons.shopping_cart, theme.colorScheme.primary),
-        _buildCard(theme, 'Toplam Ciro', '${totalRevenue.toStringAsFixed(2)} ₺', Icons.attach_money, theme.colorScheme.primary),
-        _buildCard(theme, 'Toplam Maliyet', '${totalCost.toStringAsFixed(2)} ₺', Icons.money_off, theme.colorScheme.error),
-        _buildCard(theme, 'Kar', '${totalProfit.toStringAsFixed(2)} ₺', Icons.trending_up, totalProfit >= 0 ? theme.colorScheme.primary : theme.colorScheme.error),
-      ],
-    );
-  }
-
-  Widget _buildCard(ThemeData theme, String title, String value, IconData icon, Color color) {
-    return Card(
-      color: theme.colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                Icon(icon, size: 20, color: color),
-              ],
+            Expanded(
+              child: _buildSummaryCard(
+                context,
+                '💰 ${l10n.total}',
+                '${(totalAmount / 100).toStringAsFixed(2)} ₺',
+                Colors.green,
+              ),
             ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: color,
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                context,
+                '📦 ${l10n.quantity}',
+                '$totalQuantity',
+                Colors.blue,
               ),
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                context,
+                '🧾 ${l10n.sales}',
+                '$totalSales',
+                Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                context,
+                '📊 ${l10n.average}',
+                totalSales > 0
+                    ? '${(totalAmount / totalSales / 100).toStringAsFixed(2)} ₺'
+                    : '0 ₺',
+                Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(BuildContext context, String title, String value, Color color) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

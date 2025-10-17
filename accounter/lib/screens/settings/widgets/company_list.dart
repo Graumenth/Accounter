@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/company.dart';
+import '../../../l10n/app_localizations.dart';
 import '../company_detail_screen.dart';
 
 class CompanyList extends StatelessWidget {
@@ -14,6 +15,7 @@ class CompanyList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     if (companies.isEmpty) {
@@ -21,11 +23,17 @@ class CompanyList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business_outlined, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.3)),
+            Icon(
+              Icons.business_outlined,
+              size: 64,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
             const SizedBox(height: 16),
             Text(
-              'Henüz şirket eklenmemiş',
-              style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+              l10n.noCompaniesYet,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
           ],
         ),
@@ -34,7 +42,10 @@ class CompanyList extends StatelessWidget {
 
     return ListView.separated(
       itemCount: companies.length,
-      separatorBuilder: (context, index) => Divider(height: 1, color: theme.dividerColor),
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        color: theme.dividerColor,
+      ),
       itemBuilder: (context, index) {
         final company = companies[index];
         final companyColor = Color(int.parse('0xFF${company.color.substring(1)}'));
@@ -60,7 +71,10 @@ class CompanyList extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: Icon(Icons.price_change, color: theme.colorScheme.primary),
+                icon: Icon(
+                  Icons.price_change,
+                  color: theme.colorScheme.primary,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -70,7 +84,10 @@ class CompanyList extends StatelessWidget {
                   );
                 },
               ),
-              Icon(Icons.chevron_right, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
             ],
           ),
           onTap: () => onEdit(company),

@@ -11,6 +11,8 @@ class DailyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final maxValue = daily.fold<int>(0, (max, day) {
       final total = day['total'] as int;
       return total > max ? total : max;
@@ -19,16 +21,16 @@ class DailyChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        children: daily.map((day) => _buildDayBar(day, maxValue)).toList(),
+        children: daily.map((day) => _buildDayBar(theme, day, maxValue)).toList(),
       ),
     );
   }
 
-  Widget _buildDayBar(Map<String, dynamic> day, int maxValue) {
+  Widget _buildDayBar(ThemeData theme, Map<String, dynamic> day, int maxValue) {
     final date = day['date'] as String;
     final total = (day['total'] as int) / 100;
     final percentage = maxValue > 0 ? (day['total'] as int) / maxValue : 0.0;
@@ -43,7 +45,7 @@ class DailyChart extends StatelessWidget {
               DateFormat('dd MMM').format(DateTime.parse(date)),
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
@@ -53,7 +55,7 @@ class DailyChart extends StatelessWidget {
                 Container(
                   height: 24,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -62,7 +64,7 @@ class DailyChart extends StatelessWidget {
                   child: Container(
                     height: 24,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF38A169),
+                      color: theme.colorScheme.primary,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -76,9 +78,10 @@ class DailyChart extends StatelessWidget {
             child: Text(
               '${total.toStringAsFixed(2)} ₺',
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ),

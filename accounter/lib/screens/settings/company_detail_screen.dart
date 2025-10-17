@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/company.dart';
 import '../../models/company_item_price.dart';
 import '../../services/database_service.dart';
+import '../../l10n/app_localizations.dart';
 
 class CompanyDetailScreen extends StatefulWidget {
   final Company company;
@@ -32,6 +33,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
   }
 
   Future<void> showPriceDialog(Map<String, dynamic> item) async {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final hasCustomPrice = item['custom_price_cents'] != null;
     final currentPrice = hasCustomPrice
@@ -47,7 +49,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: theme.colorScheme.surface,
         title: Text(
-          '${item['name']} - Özel Fiyat',
+          '${item['name']} - ${l10n.customPrice}',
           style: TextStyle(color: theme.colorScheme.onSurface),
         ),
         content: Column(
@@ -55,7 +57,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Varsayılan Fiyat: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
+              '${l10n.basePrice}: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
                 fontSize: 14,
@@ -65,10 +67,12 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
             TextField(
               controller: controller,
               decoration: InputDecoration(
-                labelText: 'Özel Fiyat (TL)',
+                labelText: '${l10n.customPrice} (TL)',
                 border: const OutlineInputBorder(),
                 prefixText: '₺ ',
-                labelStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                labelStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
               ),
               style: TextStyle(color: theme.colorScheme.onSurface),
               keyboardType: TextInputType.number,
@@ -80,11 +84,19 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           if (hasCustomPrice)
             TextButton(
               onPressed: () => Navigator.pop(context, 'delete'),
-              child: Text('Varsayılana Dön', style: TextStyle(color: theme.colorScheme.error)),
+              child: Text(
+                l10n.returnToDefault,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('İptal', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.7))),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -96,7 +108,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
             ),
-            child: const Text('Kaydet'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -111,7 +123,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Varsayılan fiyata döndürüldü'),
+            content: Text(l10n.returnedToDefault),
             backgroundColor: theme.colorScheme.primary,
           ),
         );
@@ -129,7 +141,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Özel fiyat kaydedildi'),
+              content: Text(l10n.customPriceSaved),
               backgroundColor: theme.colorScheme.primary,
             ),
           );
@@ -140,6 +152,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -160,12 +173,18 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         ),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
+          ? Center(
+        child: CircularProgressIndicator(
+          color: theme.colorScheme.primary,
+        ),
+      )
           : itemsWithPrices.isEmpty
           ? Center(
         child: Text(
-          'Henüz ürün eklenmemiş',
-          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          l10n.noItemsYet,
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+          ),
         ),
       )
           : ListView.separated(
@@ -206,7 +225,9 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                   Text(
                     '${displayPrice.toStringAsFixed(2)} ₺',
                     style: TextStyle(
-                      color: hasCustomPrice ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: hasCustomPrice
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withOpacity(0.7),
                       fontWeight: hasCustomPrice ? FontWeight.w600 : FontWeight.normal,
                       fontSize: hasCustomPrice ? 16 : 14,
                     ),
@@ -227,7 +248,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'Özel',
+                        l10n.custom,
                         style: TextStyle(
                           color: theme.colorScheme.primary,
                           fontSize: 12,
@@ -236,7 +257,10 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                       ),
                     ),
                   const SizedBox(width: 8),
-                  Icon(Icons.chevron_right, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  Icon(
+                    Icons.chevron_right,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
                 ],
               ),
               onTap: () => showPriceDialog(item),

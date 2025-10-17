@@ -59,7 +59,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _showCustomDatePicker() async {
-    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
@@ -70,11 +70,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF38A169),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF1A202C),
-            ),
+            colorScheme: theme.colorScheme,
           ),
           child: child!,
         );
@@ -112,20 +108,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           l10n.statistics,
-          style: const TextStyle(
-            color: Color(0xFF1A202C),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -143,17 +140,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           ),
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+              child: CircularProgressIndicator(
+                color: theme.colorScheme.primary,
+              ),
+            )
                 : statistics == null
                 ? Center(child: Text(l10n.noData))
-                : _buildStatisticsContent(l10n),
+                : _buildStatisticsContent(l10n, theme),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatisticsContent(AppLocalizations l10n) {
+  Widget _buildStatisticsContent(AppLocalizations l10n, ThemeData theme) {
     final total = statistics!['total'] as Map<String, dynamic>;
     final companies = statistics!['companies'] as List<Map<String, dynamic>>;
     final items = statistics!['items'] as List<Map<String, dynamic>>;
@@ -162,30 +163,51 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        SummaryCards(
-          total: total,
-          totalLabel: l10n.total,
-          salesLabel: l10n.sales,
-          quantityLabel: l10n.quantity,
-        ),
-        const SizedBox(height: 16),
-        CompanyStats(
-          companies: companies,
-          companiesLabel: l10n.companies,
-          noDataLabel: l10n.noData,
-        ),
-        const SizedBox(height: 16),
-        ItemStats(
-          items: items,
-          itemsLabel: l10n.items,
-          noDataLabel: l10n.noData,
-        ),
-        const SizedBox(height: 16),
-        if (daily.isNotEmpty)
-          DailyChart(
-            daily: daily,
-            dailyLabel: l10n.date,
+        SummaryCards(total: total),
+        const SizedBox(height: 24),
+        if (companies.isNotEmpty) ...[
+          Text(
+            '🏢 ${l10n.companySales}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
+          const SizedBox(height: 12),
+          CompanyStats(
+            companies: companies,
+            startDate: startDate,
+            endDate: endDate,
+          ),
+        ],
+        const SizedBox(height: 24),
+        if (items.isNotEmpty) ...[
+          Text(
+            '🎯 ${l10n.productSales}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ItemStats(items: items),
+        ],
+        const SizedBox(height: 24),
+        if (daily.isNotEmpty && selectedPeriod != 'today') ...[
+          Text(
+            '📈 ${l10n.dailyDistribution}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          DailyChart(daily: daily),
+        ],
+        const SizedBox(height: 80),
       ],
     );
   }

@@ -1,229 +1,239 @@
 import 'package:flutter/material.dart';
-import '../../../models/item.dart';
-import '../../../models/company.dart';
-import '../../../constants/app_colors.dart';
-import '../../../services/database_service.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../models/item.dart';
+import '../providers/item_provider.dart';
+import '../providers/theme_provider.dart';
+import '../dialogs/item_dialog.dart';
 
 class ItemGrid extends StatelessWidget {
-  final List<Company> companies;
-  final List<Item> items;
-  final Company? selectedCompany;
-  final Function(Company?) onCompanyChanged;
-  final VoidCallback onClose;
-  final bool hideCompanySelector;
-  final Function(Item) onAddItem;
-  final String selectCompanyLabel;
-  final String closeLabel;
+  final Function(Item, int) onItemTap;
 
   const ItemGrid({
     super.key,
-    required this.companies,
-    required this.items,
-    required this.selectedCompany,
-    required this.onCompanyChanged,
-    required this.onClose,
-    required this.onAddItem,
-    required this.selectCompanyLabel,
-    required this.closeLabel,
-    this.hideCompanySelector = false,
+    required this.onItemTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isTabletOrDesktop = MediaQuery.of(context).size.width >= 600;
-    final gridHeight = isTabletOrDesktop ? 300.0 : 240.0;
-    final crossAxisCount = isTabletOrDesktop ? 2 : 1;
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
 
-    return Container(
-      height: gridHeight,
-      color: AppColors.surface,
-      child: Column(
-        children: [
-          Container(
-            height: 2,
-            color: AppColors.divider,
-          ),
-          Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: hideCompanySelector
-                ? Row(
+    return Consumer<ItemProvider>(
+      builder: (context, itemProvider, child) {
+        final items = itemProvider.items;
+
+        if (items.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: AppRadius.mdRadius,
-                      border: Border.all(color: AppColors.primary),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.business,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            selectedCompany?.name ?? '',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 64,
+                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.noData,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onClose,
-                ),
-              ],
-            )
-                : Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: AppRadius.mdRadius,
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<Company>(
-                        value: selectedCompany,
-                        isExpanded: true,
-                        hint: Text(selectCompanyLabel),
-                        items: companies.map((company) {
-                          return DropdownMenuItem<Company>(
-                            value: company,
-                            child: Text(company.name),
-                          );
-                        }).toList(),
-                        onChanged: onCompanyChanged,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onClose,
                 ),
               ],
             ),
+          );
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 1.5,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
           ),
-          Expanded(
-            child: selectedCompany == null
-                ? Center(
-              child: Text(
-                selectCompanyLabel,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
-                ),
-              ),
-            )
-                : GridView.builder(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: 3,
-                crossAxisSpacing: AppSpacing.sm,
-                mainAxisSpacing: AppSpacing.sm,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Draggable<Map<String, dynamic>>(
-                  data: {
-                    'item': item,
-                    'companyId': selectedCompany!.id!,
-                  },
-                  feedback: Material(
-                    elevation: 4,
-                    borderRadius: AppRadius.mdRadius,
-                    child: _ItemCard(item: item, isDragging: true),
-                  ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.3,
-                    child: _ItemCard(item: item),
-                  ),
-                  child: GestureDetector(
-                    onTap: () => onAddItem(item),
-                    child: _ItemCard(item: item),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return _ItemCard(
+              item: item,
+              onTap: (quantity) => onItemTap(item, quantity),
+              isDark: isDark,
+            );
+          },
+        );
+      },
     );
   }
 }
 
 class _ItemCard extends StatelessWidget {
   final Item item;
-  final bool isDragging;
+  final Function(int) onTap;
+  final bool isDark;
 
   const _ItemCard({
     required this.item,
-    this.isDragging = false,
+    required this.onTap,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final itemColor = Color(int.parse(item.color.replaceFirst('#', '0xFF')));
+    final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.mdRadius,
-        border: Border.all(color: itemColor, width: 2),
+    return Card(
+      elevation: isDark ? 2 : 1,
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: itemColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              item.name,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+      child: InkWell(
+        onTap: () => _showQuantityDialog(context),
+        onLongPress: () => _showEditDialog(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: item.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              overflow: TextOverflow.ellipsis,
+              const Spacer(),
+              Text(
+                '${item.basePrice.toStringAsFixed(2)} ₺',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.blue[300] : Colors.blue,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showQuantityDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    int quantity = 1;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+        title: Text(
+          item.name,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${l10n.quantity}:',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 16),
+            StatefulBuilder(
+              builder: (context, setState) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (quantity > 1) {
+                          setState(() => quantity--);
+                        }
+                      },
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: isDark ? Colors.blue[300] : Colors.blue,
+                      iconSize: 32,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        quantity.toString(),
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() => quantity++);
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      color: isDark ? Colors.blue[300] : Colors.blue,
+                      iconSize: 32,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              l10n.cancel,
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
           ),
-          Text(
-            '${item.basePriceTL.toStringAsFixed(2)} ₺',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 13,
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onTap(quantity);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDark ? Colors.blue[700] : Colors.blue,
+              foregroundColor: Colors.white,
             ),
+            child: Text(l10n.add),
           ),
         ],
       ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => ItemDialog(item: item),
     );
   }
 }

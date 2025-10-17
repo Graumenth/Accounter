@@ -1,42 +1,36 @@
 import 'package:flutter/material.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DailyTotalBar extends StatelessWidget {
   final int dailyTotal;
   final int? companyTotal;
   final String? companyName;
-  final String dailyTotalLabel;
-  final String grandTotalLabel;
 
   const DailyTotalBar({
     super.key,
     required this.dailyTotal,
-    required this.dailyTotalLabel,
-    required this.grandTotalLabel,
     this.companyTotal,
     this.companyName,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double barHeight = 128.0;
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
     return Container(
-      height: barHeight,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl,
-        vertical: AppSpacing.lg,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: const Border(
-          top: BorderSide(color: AppColors.border, width: 1),
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: theme.dividerColor),
         ),
-        boxShadow: AppShadows.sm,
       ),
       child: SafeArea(
-        top: false,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             companyTotal != null && companyName != null
                 ? Row(
@@ -47,18 +41,20 @@ class DailyTotalBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        companyName!,
-                        style: AppTextStyles.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        l10n.companyTotal,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
                       ),
                       SizedBox(height: AppSpacing.xs),
                       Text(
                         '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -71,18 +67,22 @@ class DailyTotalBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        grandTotalLabel,
-                        style: AppTextStyles.caption,
+                        l10n.grandTotal,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: AppSpacing.xs),
                       Text(
                         '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
@@ -95,16 +95,19 @@ class DailyTotalBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  dailyTotalLabel,
-                  style: AppTextStyles.caption,
+                  l10n.dailyTotal,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 SizedBox(height: AppSpacing.xs),
                 Text(
                   '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],
