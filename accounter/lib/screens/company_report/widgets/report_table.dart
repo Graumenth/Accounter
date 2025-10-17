@@ -125,7 +125,7 @@ class ReportTable extends StatelessWidget {
         children: [
           _buildCell('Birim Fiyat', width: 100, isBold: true),
           ...items.map((item) {
-            final price = (item['base_price_cents'] as int) / 100;
+            final price = item['avg_unit_price'] as double;
             return _buildCell('₺${price.toStringAsFixed(2)}');
           }),
         ],
@@ -147,7 +147,7 @@ class ReportTable extends StatelessWidget {
           _buildCell('Toplam Fiyat', width: 100, isBold: true),
           ...items.map((item) {
             final total = itemTotals[item['id'] as int] ?? 0;
-            final price = (item['base_price_cents'] as int) / 100;
+            final price = item['avg_unit_price'] as double;
             final totalPrice = total * price;
             return _buildCell(
               '₺${totalPrice.toStringAsFixed(2)}',

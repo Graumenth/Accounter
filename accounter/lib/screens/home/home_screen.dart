@@ -17,8 +17,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   DateTime selectedDate = DateTime.now();
+  DateTime _lastCheckedDate = DateTime.now();
   List<Map<String, dynamic>> sales = [];
   List<Map<String, dynamic>> filteredSales = [];
   List<Company> companies = [];
@@ -34,7 +35,42 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastCheckedDate = DateTime.now();
     loadData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAndUpdateDate();
+    }
+  }
+
+  void _checkAndUpdateDate() {
+    final now = DateTime.now();
+    final lastDate = DateTime(_lastCheckedDate.year, _lastCheckedDate.month, _lastCheckedDate.day);
+    final todayDate = DateTime(now.year, now.month, now.day);
+
+    if (!lastDate.isAtSameMomentAs(todayDate)) {
+      final currentSelectedDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+      if (currentSelectedDate.isAtSameMomentAs(lastDate)) {
+        setState(() {
+          selectedDate = now;
+          _lastCheckedDate = now;
+        });
+        loadDailySales();
+      } else {
+        _lastCheckedDate = now;
+      }
+    }
   }
 
   Future<void> loadData() async {
@@ -79,7 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       companyTotal = 0;
       for (var sale in filteredSales) {
-        companyTotal += (sale['quantity'] as int) * (sale['basePriceCents'] as int);
+        final unitPrice = (sale['unit_price'] as double);
+        companyTotal += (sale['quantity'] as int) * (unitPrice * 100).toInt();
       }
     }
     setState(() {});
@@ -99,30 +136,52 @@ class _HomeScreenState extends State<HomeScreen> {
     filterSales();
   }
 
-  bool _isItemAlreadyAddedToday(int itemId, int companyId) {
-    return sales.any((sale) {
-      return sale['itemId'] == itemId && sale['companyId'] == companyId;
+  void onCompanyChanged(Company? company) {
+    setState(() {
+      selectedCompany = company;
     });
   }
 
-  Future<void> addSale(Item item, int companyId) async {
-    if (_isItemAlreadyAddedToday(item.id!, companyId)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${item.name} bu şirkete bugün zaten eklenmiş'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
+  Future<void> addSaleFromGrid(Item item) async {
+    _checkAndUpdateDate();
+    if (selectedCompany == null) return;
 
-    final customPrice = await DatabaseService.instance.getCompanyItemPrice(companyId, item.id!);
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
+      selectedCompany!.id!,
+      item.id!,
+    );
+
     final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
 
-    print('DEBUG: Item: ${item.name}, Company: $companyId, Custom Price: $customPrice, Unit Price: $unitPrice');
+    final sale = Sale(
+      itemId: item.id!,
+      date: Sale.dateToString(selectedDate),
+      companyId: selectedCompany!.id!,
+      quantity: 1,
+      unitPrice: unitPrice,
+    );
+
+    await DatabaseService.instance.insertSale(sale);
+    await loadDailySales();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${item.name} eklendi'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  Future<void> addSale(Item item, int companyId) async {
+    _checkAndUpdateDate();
+    final customPrice = await DatabaseService.instance.getCompanyItemPrice(
+      companyId,
+      item.id!,
+    );
+
+    final unitPrice = customPrice != null ? customPrice / 100 : item.basePriceTL;
 
     final sale = Sale(
       itemId: item.id!,
@@ -146,6 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> updateSaleQuantity(int saleId, int newQuantity) async {
+    _checkAndUpdateDate();
     if (newQuantity <= 0) {
       await DatabaseService.instance.deleteSale(saleId);
     } else {
@@ -158,7 +218,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFC),
-      body: Column(
+      body: isLoading
+          ? const Center(
+        child: CircularProgressIndicator(color: Color(0xFF38A169)),
+      )
+          : Column(
         children: [
           AppHeader(
             onSettingsChanged: () => loadData(),
@@ -172,7 +236,6 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedCompanyId: selectedCompanyFilter,
             onCompanySelected: onCompanyFilterChanged,
           ),
-
           Expanded(
             child: Stack(
               children: [
@@ -182,13 +245,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   onUpdateQuantity: updateSaleQuantity,
                   onAddItem: addSale,
                 ),
-
                 if (!showItemGrid)
                   Positioned(
                     bottom: 20,
                     right: 20,
                     child: FloatingActionButton.extended(
-                      onPressed: () => setState(() => showItemGrid = true),
+                      onPressed: () {
+                        _checkAndUpdateDate();
+                        setState(() => showItemGrid = true);
+                      },
                       backgroundColor: const Color(0xFF38A169),
                       icon: const Icon(Icons.add),
                       label: const Text('Satış Ekle'),
@@ -197,7 +262,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
           if (showItemGrid)
             ItemGrid(
               companies: companies,
@@ -208,9 +272,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onCompanyChanged: (company) => setState(() => selectedCompany = company),
               onClose: () => setState(() => showItemGrid = false),
               hideCompanySelector: selectedCompanyFilter != null,
-              onAddItem: addSale,
+              onAddItem: addSaleFromGrid,
             ),
-
           DailyTotalBar(
             dailyTotal: dailyTotal,
             companyTotal: selectedCompanyFilter != null ? companyTotal : null,

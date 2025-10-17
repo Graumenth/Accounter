@@ -16,7 +16,7 @@ class ReportSummary extends StatelessWidget {
     double grandTotal = 0;
     for (var item in items) {
       final total = itemTotals[item['id'] as int] ?? 0;
-      final price = (item['base_price_cents'] as int) / 100;
+      final price = item['avg_unit_price'] as double;
       grandTotal += total * price;
     }
 

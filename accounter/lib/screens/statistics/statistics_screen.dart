@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '/l10n/app_localizations.dart';
 import '../../services/database_service.dart';
 import '../../models/sale.dart';
 import 'widgets/period_selector.dart';
@@ -58,6 +59,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Future<void> _showCustomDatePicker() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -108,6 +111,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
@@ -117,9 +122,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1A202C)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'İstatistikler',
-          style: TextStyle(
+        title: Text(
+          l10n.statistics,
+          style: const TextStyle(
             color: Color(0xFF1A202C),
             fontWeight: FontWeight.w600,
           ),
@@ -135,7 +140,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : statistics == null
-                ? const Center(child: Text('Veri yok'))
+                ? Center(child: Text(l10n.noData))
                 : _buildStatisticsContent(),
           ),
         ],

@@ -23,7 +23,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDb,
       onUpgrade: _onUpgrade,
     );
@@ -76,22 +76,34 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
-        CREATE TABLE company_item_prices(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          company_id INTEGER NOT NULL,
-          item_id INTEGER NOT NULL,
-          custom_price_cents INTEGER NOT NULL,
-          FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
-          FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
-          UNIQUE(company_id, item_id)
-        )
-      ''');
+      CREATE TABLE company_item_prices(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
+        item_id INTEGER NOT NULL,
+        custom_price_cents INTEGER NOT NULL,
+        FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+        FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE,
+        UNIQUE(company_id, item_id)
+      )
+    ''');
     }
 
     if (oldVersion < 3) {
       await db.execute('''
-        ALTER TABLE companies ADD COLUMN color TEXT NOT NULL DEFAULT '#2563EB'
-      ''');
+      ALTER TABLE companies ADD COLUMN color TEXT NOT NULL DEFAULT '#2563EB'
+    ''');
+    }
+
+    if (oldVersion < 4) {
+      await db.execute('''
+      UPDATE sales 
+      SET unit_price = (
+        SELECT items.base_price_cents / 100.0 
+        FROM items 
+        WHERE items.id = sales.item_id
+      )
+      WHERE unit_price IS NULL OR unit_price = 0
+    ''');
     }
   }
 
@@ -212,22 +224,23 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getDailySales(String date) async {
     final db = await database;
     final result = await db.rawQuery('''
-      SELECT 
-        sales.id,
-        sales.item_id as itemId,
-        sales.company_id as companyId,
-        sales.quantity,
-        sales.unit_price,
-        items.name as itemName,
-        items.base_price_cents as basePriceCents,
-        items.color as itemColor,
-        companies.name as companyName
-      FROM sales
-      JOIN items ON sales.item_id = items.id
-      JOIN companies ON sales.company_id = companies.id
-      WHERE sales.date = ?
-      ORDER BY sales.id DESC
-    ''', [date]);
+    SELECT 
+      sales.id,
+      sales.item_id as itemId,
+      sales.company_id as companyId,
+      sales.quantity,
+      sales.unit_price,
+      items.name as itemName,
+      items.base_price_cents as basePriceCents,
+      items.color as itemColor,
+      companies.name as companyName,
+      companies.color as companyColor
+    FROM sales
+    JOIN items ON sales.item_id = items.id
+    JOIN companies ON sales.company_id = companies.id
+    WHERE sales.date = ?
+    ORDER BY sales.id DESC
+  ''', [date]);
     return result;
   }
 
@@ -269,9 +282,9 @@ class DatabaseService {
 
     final totalResult = await db.rawQuery('''
     SELECT 
-      COUNT(*) as totalSales,
-      SUM(sales.quantity) as totalQuantity,
-      SUM(sales.quantity * sales.unit_price * 100) as totalAmount
+      COALESCE(COUNT(*), 0) as totalSales,
+      COALESCE(SUM(sales.quantity), 0) as totalQuantity,
+      COALESCE(CAST(SUM(sales.quantity * sales.unit_price * 100) AS INTEGER), 0) as totalAmount
     FROM sales
     WHERE sales.date BETWEEN ? AND ?
   ''', [startDate, endDate]);
@@ -280,8 +293,9 @@ class DatabaseService {
     SELECT 
       companies.name,
       companies.id,
-      SUM(sales.quantity * sales.unit_price * 100) as total,
-      SUM(sales.quantity) as quantity
+      companies.color,
+      COALESCE(CAST(SUM(sales.quantity * sales.unit_price * 100) AS INTEGER), 0) as total,
+      COALESCE(SUM(sales.quantity), 0) as quantity
     FROM sales
     JOIN companies ON sales.company_id = companies.id
     WHERE sales.date BETWEEN ? AND ?
@@ -292,19 +306,21 @@ class DatabaseService {
     final itemSales = await db.rawQuery('''
     SELECT 
       items.name,
+      items.id,
       items.color,
-      SUM(sales.quantity) as quantity,
-      SUM(sales.quantity * sales.unit_price * 100) as total
+      COALESCE(SUM(sales.quantity), 0) as quantity,
+      COALESCE(CAST(SUM(sales.quantity * sales.unit_price * 100) AS INTEGER), 0) as total
     FROM sales
+    JOIN items ON sales.item_id = items.id
     WHERE sales.date BETWEEN ? AND ?
-    GROUP BY sales.item_id
+    GROUP BY items.id
     ORDER BY total DESC
   ''', [startDate, endDate]);
 
     final dailySales = await db.rawQuery('''
     SELECT 
       sales.date,
-      SUM(sales.quantity * sales.unit_price * 100) as total
+      COALESCE(CAST(SUM(sales.quantity * sales.unit_price * 100) AS INTEGER), 0) as total
     FROM sales
     WHERE sales.date BETWEEN ? AND ?
     GROUP BY sales.date
@@ -319,40 +335,46 @@ class DatabaseService {
     };
   }
 
-  Future<Map<String, dynamic>> getCompanyMonthlyReport(int companyId, String startDate, String endDate) async {
+  Future<Map<String, dynamic>> getCompanyMonthlyReport(
+      int companyId,
+      String startDate,
+      String endDate,
+      ) async {
     final db = await database;
 
-    final companyInfo = await db.query(
-      'companies',
-      where: 'id = ?',
-      whereArgs: [companyId],
-    );
-
     final items = await db.rawQuery('''
-    SELECT DISTINCT items.id, items.name, items.base_price_cents, items.color
+    SELECT DISTINCT
+      items.id,
+      items.name,
+      items.color,
+      items.base_price_cents,
+      COALESCE(
+        (
+          SELECT AVG(sales.unit_price)
+          FROM sales
+          WHERE sales.item_id = items.id 
+            AND sales.company_id = ? 
+            AND sales.date BETWEEN ? AND ?
+        ),
+        items.base_price_cents / 100.0
+      ) as avg_unit_price
     FROM sales
     JOIN items ON sales.item_id = items.id
-    WHERE sales.company_id = ?
-    AND sales.date BETWEEN ? AND ?
+    WHERE sales.company_id = ? AND sales.date BETWEEN ? AND ?
     ORDER BY items.name
-  ''', [companyId, startDate, endDate]);
+  ''', [companyId, startDate, endDate, companyId, startDate, endDate]);
 
     final dailySales = await db.rawQuery('''
     SELECT 
       sales.date,
-      items.id as itemId,
-      items.name as itemName,
+      sales.item_id as itemId,
       SUM(sales.quantity) as quantity
     FROM sales
-    JOIN items ON sales.item_id = items.id
-    WHERE sales.company_id = ?
-    AND sales.date BETWEEN ? AND ?
-    GROUP BY sales.date, items.id
-    ORDER BY sales.date ASC, items.name
+    WHERE sales.company_id = ? AND sales.date BETWEEN ? AND ?
+    GROUP BY sales.date, sales.item_id
   ''', [companyId, startDate, endDate]);
 
     return {
-      'company': companyInfo.first,
       'items': items,
       'dailySales': dailySales,
     };

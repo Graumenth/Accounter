@@ -214,7 +214,8 @@ class _SaleItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quantity = sale['quantity'] as int;
-    final itemTotal = (quantity * sale['basePriceCents']) / 100;
+    final unitPrice = sale['unit_price'] as double;
+    final itemTotal = quantity * unitPrice;
     final itemColor = sale['itemColor'] != null
         ? Color(int.parse('0xFF${sale['itemColor'].toString().substring(1)}'))
         : AppColors.primary;

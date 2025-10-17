@@ -35,8 +35,11 @@ class CategoryTabs extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             children: [
-              _buildTab('Tümü', null),
-              ...companies.map((company) => _buildTab(company.name, company.id)),
+              _buildTab('Tümü', null, const Color(0xFF38A169)),
+              ...companies.map((company) {
+                final companyColor = Color(int.parse(company.color.replaceFirst('#', '0xFF')));
+                return _buildTab(company.name, company.id, companyColor);
+              }),
             ],
           ),
         ),
@@ -48,7 +51,7 @@ class CategoryTabs extends StatelessWidget {
     );
   }
 
-  Widget _buildTab(String label, int? companyId) {
+  Widget _buildTab(String label, int? companyId, Color color) {
     final isSelected = selectedCompanyId == companyId;
 
     return GestureDetector(
@@ -57,7 +60,7 @@ class CategoryTabs extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF38A169) : Colors.transparent,
+          color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Center(

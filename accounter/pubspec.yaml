@@ -1,8 +1,8 @@
 name: accounter
-description: "A new Flutter project."
+description: "Şirket bazlı günlük satış yönetimi"
 publish_to: 'none'
 
-version: 1.0.0+54
+version: 1.0.0+1055
 
 environment:
   sdk: ^3.8.1
@@ -36,6 +36,7 @@ flutter:
   assets:
     - assets/fonts/Roboto-Regular.ttf
   uses-material-design: true
+  generate: true
 
 flutter_launcher_icons:
   android: true
@@ -43,3 +44,8 @@ flutter_launcher_icons:
   image_path: "assets/icon/logo.png"
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/logo.png"
+
+scripts:
+  build: dart run build.dart
+  build:apk: dart run build.dart apk
+  build:bundle: dart run build.dart appbundle

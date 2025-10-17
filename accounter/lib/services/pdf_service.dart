@@ -265,7 +265,7 @@ class PdfService {
               children: [
                 _buildPdfCell(ttf, 'BİRİM FİYAT', isBold: true),
                 ...items.map((item) {
-                  final price = (item['base_price_cents'] as int) / 100;
+                  final price = item['avg_unit_price'] as double;
                   return _buildPdfCell(ttf, '₺${price.toStringAsFixed(2)}');
                 }),
               ],
@@ -276,7 +276,7 @@ class PdfService {
                 _buildPdfCell(ttf, 'TOPLAM FİYAT', isBold: true),
                 ...items.map((item) {
                   final total = itemTotals[item['id'] as int] ?? 0;
-                  final price = (item['base_price_cents'] as int) / 100;
+                  final price = item['avg_unit_price'] as double;
                   final totalPrice = total * price;
                   return _buildPdfCell(
                     ttf,
@@ -329,7 +329,7 @@ class PdfService {
     double grandTotal = 0;
     for (var item in items) {
       final qty = itemTotals[item['id'] as int] ?? 0;
-      final price = (item['base_price_cents'] as int) / 100;
+      final price = item['avg_unit_price'] as double;
       grandTotal += qty * price;
     }
 
