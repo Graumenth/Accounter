@@ -81,5 +81,7 @@
   "newItem": "New Item",
   "editItem": "Edit Item",
   "startDate": "Start",
-  "endDate": "End"
+  "endDate": "End",
+  "previousDay": "Previous day",
+  "nextDay": "Next day"
 }

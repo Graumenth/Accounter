@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../constants/app_colors.dart';
 import '/l10n/app_localizations.dart';
-import '../../../../constants/app_colors.dart';
 
 class ReportTable extends StatelessWidget {
   final List<Map<String, dynamic>> items;
@@ -16,31 +17,39 @@ class ReportTable extends StatelessWidget {
     required this.itemTotals,
   });
 
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.surface,
         borderRadius: AppRadius.lgRadius,
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.border,
-        ),
+        boxShadow: AppShadows.md,
       ),
-      child: Column(
-        children: [
-          _buildTableHeader(context),
-          ...sortedDates.map((date) => _buildTableRow(context, date)),
-          _buildTotalRow(context),
-          _buildPriceRow(context),
-          _buildTotalPriceRow(context),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderRow(context),
+            ...sortedDates.map((date) => _buildDateRow(context, date)),
+            _buildTotalRow(context),
+            _buildPriceRow(context),
+            _buildTotalPriceRow(context),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTableHeader(BuildContext context) {
+  Widget _buildHeaderRow(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -54,34 +63,18 @@ class ReportTable extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildHeaderCell(context, l10n.date, width: 100),
-          ...items.map((item) => _buildHeaderCell(context, item['name'] as String)),
+          _buildCell(context, l10n.date, width: 100, isHeader: true),
+          ...items.map((item) => _buildCell(
+            context,
+            item['name'],
+            isHeader: true,
+          )),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderCell(BuildContext context, String text, {double width = 120}) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(color: AppColors.surface.withValues(alpha: 0.3)),
-        ),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.body.copyWith(
-          color: AppColors.surface,
-          fontWeight: FontWeight.w600,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildTableRow(BuildContext context, String date) {
+  Widget _buildDateRow(BuildContext context, String date) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -154,7 +147,7 @@ class ReportTable extends StatelessWidget {
           _buildCell(context, l10n.unitPrice, width: 100, isBold: true),
           ...items.map((item) {
             final price = item['avg_unit_price'] as double;
-            return _buildCell(context, '₺${price.toStringAsFixed(2)}');
+            return _buildCell(context, _formatCurrency(price));
           }),
         ],
       ),
@@ -167,7 +160,7 @@ class ReportTable extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1),
+        color: (isDark ? AppColors.darkPrimary : AppColors.primary).withOpacity(0.1),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(AppRadius.lg),
           bottomRight: Radius.circular(AppRadius.lg),
@@ -182,7 +175,7 @@ class ReportTable extends StatelessWidget {
             final totalPrice = total * price;
             return _buildCell(
               context,
-              '₺${totalPrice.toStringAsFixed(2)}',
+              _formatCurrency(totalPrice),
               isBold: true,
               color: isDark ? AppColors.darkPrimary : AppColors.primary,
             );
@@ -198,6 +191,7 @@ class ReportTable extends StatelessWidget {
         double width = 120,
         bool isBold = false,
         bool isHighlighted = false,
+        bool isHeader = false,
         Color? color,
       }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -208,18 +202,22 @@ class ReportTable extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           right: BorderSide(
-            color: isDark ? AppColors.darkBorder : AppColors.border,
+            color: isHeader
+                ? (isDark ? AppColors.darkPrimary : AppColors.primary).withOpacity(0.3)
+                : (isDark ? AppColors.darkBorder : AppColors.border),
           ),
         ),
       ),
       child: Text(
         text,
         style: TextStyle(
-          fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+          fontWeight: isBold || isHeader ? FontWeight.w600 : FontWeight.normal,
           fontSize: 14,
-          color: color ?? (isHighlighted
+          color: isHeader
+              ? AppColors.surface
+              : (color ?? (isHighlighted
               ? (isDark ? AppColors.darkPrimary : AppColors.primary)
-              : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+              : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary))),
         ),
         textAlign: TextAlign.center,
       ),

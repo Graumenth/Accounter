@@ -79,6 +79,7 @@ class _DateSelectorState extends State<DateSelector> {
 
   String getDateLabel(DateTime date) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context);
 
     if (isSameDay(date, todayMidnight)) {
       return l10n.today;
@@ -87,7 +88,7 @@ class _DateSelectorState extends State<DateSelector> {
     } else if (isSameDay(date, todayMidnight.add(const Duration(days: 1)))) {
       return l10n.tomorrow;
     }
-    return DateFormat('dd MMM', 'tr_TR').format(date);
+    return DateFormat('dd MMM', locale.toString()).format(date);
   }
 
   bool isSpecialDay(DateTime date) {
@@ -99,6 +100,7 @@ class _DateSelectorState extends State<DateSelector> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final locale = Localizations.localeOf(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -211,7 +213,7 @@ class _DateSelectorState extends State<DateSelector> {
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
-                                                DateFormat('dd MMM', 'tr_TR').format(date),
+                                                DateFormat('dd MMM', locale.toString()).format(date),
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w300,

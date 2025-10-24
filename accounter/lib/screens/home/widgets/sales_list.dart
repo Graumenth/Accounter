@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import '../../../models/item.dart';
 import '../../../constants/app_colors.dart';
 import '/l10n/app_localizations.dart';
@@ -21,6 +22,11 @@ class SalesList extends StatelessWidget {
     required this.noSalesText,
     required this.dragItemText,
   });
+
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +146,11 @@ class _SaleItem extends StatelessWidget {
     required this.isDark,
   });
 
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
+
   void _showQuantityPicker(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final currentQuantity = sale['quantity'] as int;
@@ -210,7 +221,7 @@ class _SaleItem extends StatelessWidget {
                               onPressed: () {
                                 final manualQuantity = int.tryParse(textController.text);
                                 final finalQuantity = manualQuantity ?? selectedQuantity;
-                                if (finalQuantity > 0 && finalQuantity <= 100) {
+                                if (finalQuantity > 0) {
                                   onUpdateQuantity(sale['id'], finalQuantity);
                                   focusNode.dispose();
                                   Navigator.pop(context);
@@ -246,7 +257,7 @@ class _SaleItem extends StatelessWidget {
                           ),
                           onChanged: (value) {
                             final newValue = int.tryParse(value);
-                            if (newValue != null && newValue > 0 && newValue <= 100) {
+                            if (newValue != null && newValue > 0) {
                               selectedQuantity = newValue;
                             }
                           },
@@ -257,7 +268,7 @@ class _SaleItem extends StatelessWidget {
                           height: 200,
                           child: CupertinoPicker(
                             scrollController: FixedExtentScrollController(
-                              initialItem: currentQuantity - 1,
+                              initialItem: currentQuantity - 1 < 9999 ? currentQuantity - 1 : 0,
                             ),
                             itemExtent: 40,
                             onSelectedItemChanged: (int index) {
@@ -265,7 +276,7 @@ class _SaleItem extends StatelessWidget {
                               textController.text = selectedQuantity.toString();
                             },
                             children: List.generate(
-                              100,
+                              9999,
                                   (index) => Center(
                                 child: Text(
                                   '${index + 1}',
@@ -408,7 +419,7 @@ class _SaleItem extends StatelessWidget {
           SizedBox(
             width: isTabletOrDesktop ? 110 : 90,
             child: Text(
-              '${itemTotal.toStringAsFixed(2)} ₺',
+              _formatCurrency(itemTotal),
               textAlign: TextAlign.right,
               style: AppTextStyles.price.copyWith(
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,

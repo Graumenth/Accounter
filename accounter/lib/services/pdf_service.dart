@@ -9,6 +9,11 @@ import 'package:cross_file/cross_file.dart';
 import '../screens/settings/widgets/profile_manager.dart';
 
 class PdfService {
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
+
   static Future<void> exportReport({
     required String companyName,
     required DateTime startDate,
@@ -272,7 +277,7 @@ class PdfService {
                 _buildPdfCell(ttf, translations['unitPrice']?.toUpperCase() ?? 'UNIT PRICE', isBold: true),
                 ...items.map((item) {
                   final price = item['avg_unit_price'] as double;
-                  return _buildPdfCell(ttf, '₺${price.toStringAsFixed(2)}');
+                  return _buildPdfCell(ttf, _formatCurrency(price));
                 }),
               ],
             ),
@@ -286,7 +291,7 @@ class PdfService {
                   final totalPrice = total * price;
                   return _buildPdfCell(
                     ttf,
-                    '₺${totalPrice.toStringAsFixed(2)}',
+                    _formatCurrency(totalPrice),
                     isBold: true,
                     color: PdfColors.green700,
                   );
@@ -361,7 +366,7 @@ class PdfService {
             ),
           ),
           pw.Text(
-            '₺${grandTotal.toStringAsFixed(2)}',
+            _formatCurrency(grandTotal),
             style: pw.TextStyle(
               font: ttf,
               fontSize: 14,

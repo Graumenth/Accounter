@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:intl/intl.dart';
 import '../../../models/item.dart';
 import '../../../services/database_service.dart';
 import '../../../constants/app_colors.dart';
@@ -21,12 +22,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late TextEditingController nameController;
   late TextEditingController priceController;
   late Color selectedColor;
+  final formatter = NumberFormat('#,##0.00', 'tr_TR');
 
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.item.name);
-    priceController = TextEditingController(text: widget.item.basePriceTL.toStringAsFixed(2));
+    priceController = TextEditingController(text: formatter.format(widget.item.basePriceTL));
     selectedColor = Color(int.parse('0xFF${widget.item.color.substring(1)}'));
   }
 
@@ -39,7 +41,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Future<void> saveItem() async {
     if (nameController.text.trim().isEmpty) return;
-    final price = double.tryParse(priceController.text);
+    final priceText = priceController.text.trim()
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+    final price = double.tryParse(priceText);
     if (price == null || price <= 0) return;
 
     final updatedItem = Item(
@@ -139,13 +144,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       labelText: l10n.price,
                       border: const OutlineInputBorder(),
                       prefixText: '₺ ',
+                      hintText: '1.234,56',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(
                       color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                     onChanged: (value) {
-                      final price = double.tryParse(value);
+                      final priceText = value.trim()
+                          .replaceAll('.', '')
+                          .replaceAll(',', '.');
+                      final price = double.tryParse(priceText);
                       if (price != null && price > 0) {
                         saveItem();
                       }

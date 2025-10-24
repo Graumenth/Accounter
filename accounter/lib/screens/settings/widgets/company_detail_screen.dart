@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:intl/intl.dart';
 import '../../../models/company.dart';
 import '../../../models/item.dart';
 import '../../../models/company_item_price.dart';
@@ -24,6 +25,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
   late Color selectedColor;
   List<Map<String, dynamic>> itemsWithPrices = [];
   bool isLoading = true;
+  final formatter = NumberFormat('#,##0.00', 'tr_TR');
 
   @override
   void initState() {
@@ -97,7 +99,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         : (item['base_price_cents'] as int) / 100;
 
     final controller = TextEditingController(
-      text: currentPrice.toStringAsFixed(2),
+      text: formatter.format(currentPrice),
     );
 
     final result = await showDialog<String>(
@@ -115,7 +117,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${l10n.basePrice}: ${((item['base_price_cents'] as int) / 100).toStringAsFixed(2)} ₺',
+              '${l10n.basePrice}: ${formatter.format((item['base_price_cents'] as int) / 100)} ₺',
               style: TextStyle(
                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 fontSize: 14,
@@ -128,6 +130,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                 labelText: '${l10n.customPrice} (TL)',
                 border: const OutlineInputBorder(),
                 prefixText: '₺ ',
+                hintText: '1.234,56',
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
@@ -182,7 +185,10 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         );
       }
     } else if (result != null && result.isNotEmpty) {
-      final price = double.tryParse(result);
+      final priceText = result.trim()
+          .replaceAll('.', '')
+          .replaceAll(',', '.');
+      final price = double.tryParse(priceText);
       if (price != null && price > 0) {
         final companyItemPrice = CompanyItemPrice(
           companyId: widget.company.id!,
@@ -328,7 +334,6 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                 final displayPrice = hasCustomPrice
                     ? (item['custom_price_cents'] as int) / 100
                     : (item['base_price_cents'] as int) / 100;
-                final basePrice = (item['base_price_cents'] as int) / 100;
                 final itemColor = Color(int.parse('0xFF${item['item_color'].toString().substring(1)}'));
                 final isTabletOrDesktop = MediaQuery.of(context).size.width >= 600;
 
@@ -351,30 +356,18 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                       ),
                       SizedBox(width: isTabletOrDesktop ? AppSpacing.lg : AppSpacing.md),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['name'],
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                              ),
-                            ),
-                            SizedBox(height: AppSpacing.xs),
-                            Text(
-                              '${l10n.basePrice}: ${basePrice.toStringAsFixed(2)} ₺',
-                              style: AppTextStyles.bodySecondary.copyWith(
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          item['name'],
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          ),
                         ),
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
                             onTap: () async {
-                              final l10n = AppLocalizations.of(context)!;
                               final color = await showDialog<Color>(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -437,7 +430,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                                 border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
                               ),
                               child: Text(
-                                '${displayPrice.toStringAsFixed(2)} ₺',
+                                '${formatter.format(displayPrice)} ₺',
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.price.copyWith(
                                   color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,

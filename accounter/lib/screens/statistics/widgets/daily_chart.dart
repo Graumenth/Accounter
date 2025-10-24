@@ -10,6 +10,11 @@ class DailyChart extends StatelessWidget {
     required this.daily,
   });
 
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -74,9 +79,9 @@ class DailyChart extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           SizedBox(
-            width: 80,
+            width: 100,
             child: Text(
-              '${total.toStringAsFixed(2)} ₺',
+              _formatCurrency(total),
               textAlign: TextAlign.right,
               style: AppTextStyles.bodyLarge.copyWith(
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,

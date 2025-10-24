@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../constants/app_colors.dart';
 
 class DailyTotalBar extends StatelessWidget {
@@ -16,6 +17,11 @@ class DailyTotalBar extends StatelessWidget {
     required this.dailyTotalLabel,
     required this.grandTotalLabel,
   });
+
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +67,7 @@ class DailyTotalBar extends StatelessWidget {
                       ),
                       SizedBox(height: AppSpacing.xs),
                       Text(
-                        '${(companyTotal! / 100).toStringAsFixed(2)} ₺',
+                        _formatCurrency(companyTotal! / 100),
                         style: AppTextStyles.heading2.copyWith(
                           color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
@@ -82,7 +88,7 @@ class DailyTotalBar extends StatelessWidget {
                     ),
                     SizedBox(height: AppSpacing.xs),
                     Text(
-                      '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
+                      _formatCurrency(dailyTotal / 100),
                       style: AppTextStyles.priceLarge.copyWith(
                         color: isDark ? AppColors.darkPrimary : AppColors.primary,
                       ),
@@ -101,7 +107,7 @@ class DailyTotalBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${(dailyTotal / 100).toStringAsFixed(2)} ₺',
+                  _formatCurrency(dailyTotal / 100),
                   style: AppTextStyles.priceLarge.copyWith(
                     color: isDark ? AppColors.darkPrimary : AppColors.primary,
                     fontSize: 28,

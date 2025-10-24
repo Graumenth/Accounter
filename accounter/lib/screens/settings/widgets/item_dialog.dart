@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:intl/intl.dart';
 import '../../../models/item.dart';
 import '../../../constants/app_colors.dart';
 
@@ -15,9 +16,10 @@ Future<dynamic> showItemDialog(
       required String newItemLabel,
       required String editItemLabel,
     }) async {
+  final formatter = NumberFormat('#,##0.00', 'tr_TR');
   final nameController = TextEditingController(text: item?.name ?? '');
   final priceController = TextEditingController(
-    text: item != null ? item.basePriceTL.toStringAsFixed(2) : '',
+    text: item != null ? formatter.format(item.basePriceTL) : '',
   );
   Color selectedColor = item != null
       ? Color(int.parse('0xFF${item.color.substring(1)}'))
@@ -150,21 +152,28 @@ Future<dynamic> showItemDialog(
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.trim().isEmpty) return;
-              final price = double.tryParse(priceController.text);
-              if (price == null || price <= 0) return;
-
-              Navigator.pop(context, {
-                'name': nameController.text.trim(),
-                'priceCents': (price * 100).toInt(),
-                'color': '#${selectedColor.toARGB32().toRadixString(16).substring(2).padLeft(6, '0')}',
-              });
+              if (nameController.text.trim().isNotEmpty &&
+                  priceController.text.trim().isNotEmpty) {
+                final priceText = priceController.text.trim()
+                    .replaceAll('.', '')
+                    .replaceAll(',', '.');
+                final price = double.tryParse(priceText);
+                if (price != null) {
+                  Navigator.pop(context, {
+                    'name': nameController.text.trim(),
+                    'priceCents': (price * 100).toInt(),
+                    'color': '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}',
+                  });
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: isDark ? AppColors.darkPrimary : AppColors.primary,
-              foregroundColor: Colors.white,
             ),
-            child: Text(saveLabel),
+            child: Text(
+              saveLabel,
+              style: const TextStyle(color: AppColors.surface),
+            ),
           ),
         ],
       ),

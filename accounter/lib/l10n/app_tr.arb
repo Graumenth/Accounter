@@ -81,5 +81,7 @@
   "newItem": "Yeni Ürün",
   "editItem": "Ürünü Düzenle",
   "startDate": "Başlangıç",
-  "endDate": "Bitiş"
+  "endDate": "Bitiş",
+  "previousDay": "Önceki gün",
+  "nextDay": "Sonraki gün"
 }

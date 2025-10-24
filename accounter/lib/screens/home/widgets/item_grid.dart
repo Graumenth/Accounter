@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../models/item.dart';
 import '../../../models/company.dart';
 import '../../../constants/app_colors.dart';
@@ -59,26 +60,27 @@ class ItemGrid extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: (isDark ? AppColors.darkPrimary : AppColors.primary).withValues(alpha: 0.1),
                       borderRadius: AppRadius.mdRadius,
-                      border: Border.all(color: AppColors.primary),
+                      border: Border.all(color: isDark ? AppColors.darkPrimary : AppColors.primary),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.business,
-                          color: AppColors.primary,
+                          color: isDark ? AppColors.darkPrimary : AppColors.primary,
                           size: 20,
                         ),
                         SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             selectedCompany?.name ?? '',
-                            style: const TextStyle(
-                              color: AppColors.primary,
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkPrimary : AppColors.primary,
                               fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -88,48 +90,58 @@ class ItemGrid extends StatelessWidget {
                 ),
                 SizedBox(width: AppSpacing.sm),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
                   onPressed: onClose,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ],
             )
                 : Row(
               children: [
                 Expanded(
-                  child: companies.isEmpty
-                      ? Center(
-                    child: Text(
-                      l10n.noCompaniesYet,
-                      style: TextStyle(
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                        fontSize: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant,
+                      borderRadius: AppRadius.mdRadius,
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<Company?>(
+                        value: selectedCompany,
+                        hint: Text(
+                          selectCompanyLabel,
+                          style: TextStyle(
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
+                        isExpanded: true,
+                        items: companies.map((company) {
+                          return DropdownMenuItem(
+                            value: company,
+                            child: Text(
+                              company.name,
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: onCompanyChanged,
+                        dropdownColor: isDark ? AppColors.darkSurface : AppColors.surface,
                       ),
                     ),
-                  )
-                      : DropdownButtonFormField<Company>(
-                    initialValue: selectedCompany,
-                    decoration: InputDecoration(
-                      labelText: selectCompanyLabel,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                    ),
-                    items: companies.map((company) {
-                      return DropdownMenuItem(
-                        value: company,
-                        child: Text(company.name),
-                      );
-                    }).toList(),
-                    onChanged: onCompanyChanged,
                   ),
                 ),
                 SizedBox(width: AppSpacing.sm),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
                   onPressed: onClose,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ],
             ),
@@ -194,6 +206,11 @@ class _DraggableItemCard extends StatefulWidget {
 class _DraggableItemCardState extends State<_DraggableItemCard> {
   int? customPriceCents;
   bool isLoading = true;
+
+  static String _formatCurrency(double amount) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '${formatter.format(amount)} ₺';
+  }
 
   @override
   void initState() {
@@ -276,7 +293,7 @@ class _DraggableItemCardState extends State<_DraggableItemCard> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '${_getDisplayPrice().toStringAsFixed(2)} ₺',
+                  _formatCurrency(_getDisplayPrice()),
                   style: TextStyle(
                     color: AppColors.surface.withValues(alpha: 0.9),
                     fontSize: 12,
@@ -337,7 +354,7 @@ class _DraggableItemCardState extends State<_DraggableItemCard> {
           const SizedBox(height: AppSpacing.xs),
           if (hasCustomPrice && widget.selectedCompany != null) ...[
             Text(
-              '${widget.item.basePriceTL.toStringAsFixed(2)} ₺',
+              _formatCurrency(widget.item.basePriceTL),
               style: TextStyle(
                 color: AppColors.surface.withValues(alpha: 0.5),
                 fontSize: 10,
@@ -345,7 +362,7 @@ class _DraggableItemCardState extends State<_DraggableItemCard> {
               ),
             ),
             Text(
-              '${displayPrice.toStringAsFixed(2)} ₺',
+              _formatCurrency(displayPrice),
               style: const TextStyle(
                 color: AppColors.surface,
                 fontSize: 13,
@@ -354,7 +371,7 @@ class _DraggableItemCardState extends State<_DraggableItemCard> {
             ),
           ] else
             Text(
-              '${displayPrice.toStringAsFixed(2)} ₺',
+              _formatCurrency(displayPrice),
               style: TextStyle(
                 color: AppColors.surface.withValues(alpha: 0.9),
                 fontSize: 12,
